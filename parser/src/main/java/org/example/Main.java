@@ -65,7 +65,7 @@ Term 2
 :   Definition 2
             """;
     public static void main(String[] args) {
-        System.out.println("Hello world!");
-        System.out.println("caca");
+        ParagraphParser parser = new ParagraphParser();
+        parser.parseParagraphs(TEST_MARKDOWN);
     }
 }

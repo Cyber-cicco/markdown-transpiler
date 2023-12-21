@@ -17,15 +17,18 @@ public class ParagraphParser {
     private int startWhiteSpaces = 0;
     private int startTab = 0;
     List<Paragraph> paragraphs = new ArrayList<>();
+
+    /**
+     * PURE
+     */
     private boolean isEOF(String fileContent, int pos) {
-        return fileContent.charAt(pos) != '\0';
+        return pos >= fileContent.length();
     }
 
     /**
      * MUT startTab
      * MUT startWhiteSpaces
      * MUT pos
-     * @param fileContent contenu du fichier
      */
     private void handleStartWhitespaces(String fileContent){
         while (isStartWhiteSpaceOrTab(fileContent)){
@@ -36,8 +39,6 @@ public class ParagraphParser {
      * MUT startTab
      * MUT startWhiteSpaces
      * MUT pos
-     * @param fileContent contenu du fichier
-     * @return bool
      */
     private boolean isStartWhiteSpaceOrTab(String fileContent) {
         boolean isWhiteSpace = fileContent.charAt(pos) == ' ' ;
@@ -49,8 +50,6 @@ public class ParagraphParser {
 
     /**
      * PURE
-     * @param fileContent contenu du fichier
-     * @return bool
      */
     private int countHeadingNumber(String fileContent, int peek) {
         int headNumber = 0;
@@ -61,25 +60,38 @@ public class ParagraphParser {
         return  headNumber;
     }
 
+    /**
+     * PURE
+     */
     private boolean isHeading(int headNumber){
         return  headNumber > 0 && headNumber <= 6;
     }
 
+    /**
+     * PURE
+     */
     private boolean isCarriageReturn(char c){
-        return c == '\n';
+        return c == '\n' || c == '\r';
     }
 
     /**
      * MUT startTab
      * MUT startWhiteSpaces
      * MUT posPrevious
+     * MUT pos
      */
-    private void resetParagraph(){
+    private void toNextParagraph(String fileContent){
         startTab = 0;
         startWhiteSpaces = 0;
+        while (!isEOF(fileContent, pos) && isBlankLine(fileContent, pos)){
+            pos++;
+        }
         posPrevious = pos;
     }
 
+    /**
+     * PURE
+     */
     private boolean isBlankLine(String fileContent, int peek){
         while (!isEOF(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))){
             if (!isWhiteSpaceOrTab(fileContent, peek)){
@@ -89,31 +101,62 @@ public class ParagraphParser {
         return true;
     }
 
+    /**
+     * PURE
+     */
     private boolean isWhiteSpaceOrTab(String fileContent, int peek) {
         return fileContent.charAt(peek) == ' ' || fileContent.charAt(peek) == '\t';
     }
 
     /**
      * PURE
-     * @param fileContent contenu
-     * @return bool
      */
     private boolean isBasicParagraphSeparator(String fileContent){
         if(pos <= fileContent.length()) {
-            return fileContent.charAt(pos) == '\n' && isBlankLine(fileContent, pos + 1);
+            return isCarriageReturn(fileContent.charAt(pos)) && isBlankLine(fileContent, pos + 1);
         }
         return false;
     }
 
     /**
      * MUT pos
+     */
+    private void skipLine(String fileContent){
+        while (!isEOF(fileContent, pos)) {
+            pos++;
+        }
+        pos++;
+    }
+
+    /**
+     * PURE
+     */
+    private boolean isTidla(char c) {
+        return c == '`';
+    }
+
+    /**
+     * PURE
+     */
+    private int countTildas(String fileContent, int peek) {
+        int tildaNumber = 0;
+        while (isTidla(fileContent.charAt(peek))) {
+            tildaNumber++;
+            peek++;
+        }
+        return tildaNumber;
+    }
+
+    /**
+     * MUT pos
      * MUT posPrevious
      * MUT paragraphs
-     * @param fileContent contenu
+     * MUT startTab
+     * MUT startWhiteSpaces
      */
-    private void handleSideParagraph(String fileContent){
+    private void handleIndentCodeBlock(String fileContent){
         posPrevious = pos;
-        while (!isBasicParagraphSeparator(fileContent)){
+        while (!isEOF(fileContent, pos) && !isBasicParagraphSeparator(fileContent)){
             pos++;
         }
         pos++;
@@ -123,41 +166,132 @@ public class ParagraphParser {
         paragraph.prefixHTML = HTMLTagFactory.getAsidePrefix();
         paragraph.suffixHTML = HTMLTagFactory.getAsideSuffix();
         paragraphs.add(paragraph);
-        resetParagraph();
+        toNextParagraph(fileContent);
     }
 
+    /**
+     * PURE
+     */
     public boolean isBlockQuote(char c){
         return c == '>';
     }
 
     /**
+     * PURE
+     */
+    private boolean isCodeBlock(int tildaNumber) {
+        return tildaNumber >= 3;
+    }
+
+    /**
+     * PURE
+     */
+    private boolean isEndOfCodeBlock(int startTildas, int endTildas, String fileContent, int peek){
+        boolean noneSpacesInLine = false;
+        while (!isEOF(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))){
+            if(!isWhiteSpaceOrTab(fileContent, peek)) {
+                noneSpacesInLine = true;
+            }
+            peek++;
+        }
+        return (startTildas <= endTildas) && !noneSpacesInLine;
+    }
+    /**
      * MUT posPrevious
      * MUT paragraphs
      * MUT pos
-     * @param fileContent contenu
+     * MUT startTab
+     * MUT startWhiteSpaces
      */
-    public void handleHeading(String fileContent, int headNumber){
-        pos = headNumber;
+    private void handleHeading(String fileContent, int headNumber){
+        pos += headNumber;
         posPrevious = pos;
-        while (!isCarriageReturn(fileContent.charAt(pos))){
+        while (!isEOF(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))){
             pos++;
         }
+        pos++;
         Paragraph paragraph = new Paragraph();
         paragraph.content = fileContent.substring(posPrevious, pos);
         paragraph.kind = ParagraphKind.HEADING;
         paragraph.prefixHTML = HTMLTagFactory.getHeadingPrefix(headNumber);
         paragraph.suffixHTML = HTMLTagFactory.getHeadingSuffix(headNumber);
         paragraphs.add(paragraph);
-        resetParagraph();
+        toNextParagraph(fileContent);
     }
 
-    public void handleBlockQuote(String fileContent) {
+    /**
+     * MUT posPrevious
+     * MUT paragraphs
+     * MUT pos
+     * MUT startTab
+     * MUT startWhiteSpaces
+     */
+    private void handleBlockQuote(String fileContent) {
+        pos++;
         posPrevious = pos;
-        while (!isCarriageReturn(fileContent.charAt(pos))){
+        while (!isEOF(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))){
             pos++;
         }
         Paragraph paragraph = new Paragraph();
         paragraph.content = fileContent.substring(posPrevious, pos);
+        paragraph.kind = ParagraphKind.BLOCKQUOTE;
+        paragraph.prefixHTML = HTMLTagFactory.getBlockQuotePrefix();
+        paragraph.suffixHTML = HTMLTagFactory.getBlockQuoteSuffix();
+        paragraphs.add(paragraph);
+        toNextParagraph(fileContent);
+    }
+
+    /**
+     * MUT posPrevious
+     * MUT paragraphs
+     * MUT pos
+     * MUT startTab
+     * MUT startWhiteSpaces
+     */
+    private void handleCodeBlock(String fileContent, int tildaNumber) {
+        Paragraph paragraph = new Paragraph();
+        paragraph.kind = ParagraphKind.CODE_BLOCK;
+        paragraph.prefixHTML = HTMLTagFactory.getCodePrefix();
+        paragraph.suffixHTML = HTMLTagFactory.getCodeSuffix();
+        pos += tildaNumber;
+        posPrevious = pos;
+        boolean isEndOfCodeBlock = false;
+        while (!isEOF(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))) {
+            pos++;
+        }
+        if(!isEOF(fileContent, pos)) paragraph.marker = fileContent.substring(posPrevious, pos);
+        pos++;
+        posPrevious = pos;
+        while (!isEOF(fileContent, pos) && !isEndOfCodeBlock) {
+            if(isTidla(fileContent.charAt(pos))) {
+                int endTildaNumber = countTildas(fileContent, pos);
+                isEndOfCodeBlock = isEndOfCodeBlock(tildaNumber, endTildaNumber, fileContent, pos+endTildaNumber);
+            }
+            pos++;
+        }
+        paragraph.content = fileContent.substring(posPrevious, pos);
+        paragraphs.add(paragraph);
+        toNextParagraph(fileContent);
+    }
+
+    /**
+     * MUT posPrevious
+     * MUT paragraphs
+     * MUT pos
+     */
+    private void handleBaseParagraph(String fileContent) {
+        posPrevious = pos;
+        while (!isEOF(fileContent, pos) && !isBasicParagraphSeparator(fileContent)){
+            pos++;
+        }
+        pos++;
+        Paragraph paragraph = new Paragraph();
+        paragraph.content = fileContent.substring(posPrevious, pos);
+        paragraph.kind = ParagraphKind.SIMPLE;
+        paragraph.prefixHTML = HTMLTagFactory.getDivPrefix();
+        paragraph.suffixHTML = HTMLTagFactory.getDivSuffix();
+        paragraphs.add(paragraph);
+        toNextParagraph(fileContent);
     }
 
     public List<Paragraph> parseParagraphs(String fileContent) {
@@ -165,12 +299,12 @@ public class ParagraphParser {
             handleStartWhitespaces(fileContent);
             if (startWhiteSpaces >= 4) {
                 pos += 4;
-                handleSideParagraph(fileContent);
+                handleIndentCodeBlock(fileContent);
                 continue;
             }
             if (startTab >= 1){
                 pos += 1;
-                handleSideParagraph(fileContent);
+                handleIndentCodeBlock(fileContent);
                 continue;
             }
             int headNumber = countHeadingNumber(fileContent, pos);
@@ -182,8 +316,20 @@ public class ParagraphParser {
                 handleBlockQuote(fileContent);
                 continue;
             }
+            int tildaNumber = countTildas(fileContent, pos);
+            if (isCodeBlock(tildaNumber)) {
+                handleCodeBlock(fileContent, tildaNumber);
+                continue;
+            }
+            handleBaseParagraph(fileContent);
         }
+        paragraphs.forEach(p -> {
+            System.out.println(p);
+            System.out.println();
+        });
         return paragraphs;
     }
+
+
 }
 

@@ -9,6 +9,8 @@ public class HTMLTagFactory {
     private static final Map<Integer, HTMLTag> HEADINGMAP = new HashMap<>();
     private static final HTMLTag ASIDE = new HTMLTag("aside");
     private static final HTMLTag BLOCKQUOTE = new HTMLTag("blockquote");
+    private static final HTMLTag CODE = new HTMLTag("code");
+    private static final HTMLTag DIV = new HTMLTag("div");
     public static String getAsidePrefix(){
         return ASIDE.getOpeningTag();
     }
@@ -47,6 +49,20 @@ public class HTMLTagFactory {
         return BLOCKQUOTE.getClosingTag();
     }
 
+    public static String getCodePrefix(){
+        return CODE.getOpeningTag();
+    }
+
+    public static String getCodeSuffix(){
+        return CODE.getClosingTag();
+    }
+
+    public static String getDivPrefix(){
+        return DIV.getOpeningTag();
+    }
+    public static String getDivSuffix(){
+        return DIV.getClosingTag();
+    }
     public static String getBlockQuotePrefix(){
         return BLOCKQUOTE.getOpeningTag();
     }

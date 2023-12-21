@@ -20,4 +20,14 @@ public class Paragraph {
     public String marker;
     public String content;
     public ParagraphKind kind;
+
+    @Override
+    public String toString() {
+        return "Paragraph{" +
+                "prefixHTML='" + prefixHTML + '\'' +
+                ", suffixHTML='" + suffixHTML + '\'' +
+                ", content='" + content + '\'' +
+                ", kind=" + kind +
+                '}';
+    }
 }

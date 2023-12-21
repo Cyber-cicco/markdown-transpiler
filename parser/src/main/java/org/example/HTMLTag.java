@@ -1,6 +1,7 @@
 package org.example;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -11,7 +12,7 @@ public class HTMLTag {
     }
 
     public String tag;
-    public Map<String, String> attributes;
+    public Map<String, String> attributes = new HashMap<>();
 
     public String getAutoClosingTag(){
         List<String> attributeList = new ArrayList<>();
