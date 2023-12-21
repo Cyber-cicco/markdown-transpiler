@@ -11,6 +11,7 @@ public class HTMLTagFactory {
     private static final HTMLTag BLOCKQUOTE = new HTMLTag("blockquote");
     private static final HTMLTag CODE = new HTMLTag("code");
     private static final HTMLTag DIV = new HTMLTag("div");
+    public static final HTMLTag UL = new HTMLTag("ul");
     public static String getAsidePrefix(){
         return ASIDE.getOpeningTag();
     }
@@ -57,6 +58,12 @@ public class HTMLTagFactory {
         return CODE.getClosingTag();
     }
 
+    public static String getUlPrefix(){
+        return UL.getOpeningTag();
+    }
+    public static String getUlSuffix(){
+        return UL.getClosingTag();
+    }
     public static String getDivPrefix(){
         return DIV.getOpeningTag();
     }

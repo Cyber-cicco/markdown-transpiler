@@ -3,12 +3,6 @@ package org.example;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Markdown se divise en paragraphes
- * Un paragraphe peut se définir de deux façons:
- * une ligne vide (rien ou espace)
- * Un titre
- */
 public class ParagraphParser {
 
 
@@ -32,6 +26,7 @@ public class ParagraphParser {
      */
     private void handleStartWhitespaces(String fileContent){
         while (isStartWhiteSpaceOrTab(fileContent)){
+            pos++;
         }
     }
 
@@ -81,12 +76,16 @@ public class ParagraphParser {
      * MUT pos
      */
     private void toNextParagraph(String fileContent){
-        startTab = 0;
-        startWhiteSpaces = 0;
+        resetStartWhiteSpaces();
         while (!isEOF(fileContent, pos) && isBlankLine(fileContent, pos)){
             pos++;
         }
         posPrevious = pos;
+    }
+
+    private void resetStartWhiteSpaces(){
+        startTab = 0;
+        startWhiteSpaces = 0;
     }
 
     /**
@@ -97,6 +96,7 @@ public class ParagraphParser {
             if (!isWhiteSpaceOrTab(fileContent, peek)){
                 return false;
             }
+            peek++;
         }
         return true;
     }
@@ -106,6 +106,13 @@ public class ParagraphParser {
      */
     private boolean isWhiteSpaceOrTab(String fileContent, int peek) {
         return fileContent.charAt(peek) == ' ' || fileContent.charAt(peek) == '\t';
+    }
+
+    private boolean isWhiteSpace(char c){
+        return c == ' ';
+    }
+    private boolean isTab(char c){
+        return c == '\t';
     }
 
     /**
@@ -172,8 +179,28 @@ public class ParagraphParser {
     /**
      * PURE
      */
-    public boolean isBlockQuote(char c){
+    private boolean isBlockQuote(char c){
         return c == '>';
+    }
+
+    /**
+     * PURE
+     */
+    private boolean isStartOfUnorderedListItem(String fileContent, int peek){
+        return
+                !isEOF(fileContent, peek+1) &&
+                fileContent.charAt(peek) == '-' &&
+                isWhiteSpaceOrTab(fileContent, peek+1);
+    }
+
+    /**
+     * PURE
+     */
+    private boolean isStartOfOrderedListItem(String fileContent, int peek){
+        return Character.isDigit(fileContent.charAt(peek))
+                && (fileContent.charAt(peek + 1) == ')' ||
+                fileContent.charAt(peek + 1) == '.') &&
+                isWhiteSpaceOrTab(fileContent, peek + 1);
     }
 
     /**
@@ -294,6 +321,49 @@ public class ParagraphParser {
         toNextParagraph(fileContent);
     }
 
+    private void handleNestedLists(String fileContent) {
+        while (!isEOF(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))) {
+            pos++;
+        }
+        if(hasNestedList(fileContent)) {
+            handleNestedLists(fileContent);
+        }
+    }
+    private void handleUnorderedList(String fileContent) {
+        posPrevious = pos;
+        while (!isEOF(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))){
+            pos++;
+        }
+        pos++;
+        if (hasNestedList(fileContent)) {
+            handleNestedLists(fileContent);
+        }
+        Paragraph paragraph = new Paragraph();
+        paragraph.content = fileContent.substring(posPrevious, pos);
+        paragraph.kind = ParagraphKind.UNORDERED_LIST_ITEM;
+        paragraph.prefixHTML = HTMLTagFactory.getUlPrefix();
+        paragraph.suffixHTML = HTMLTagFactory.getUlSuffix();
+        paragraphs.add(paragraph);
+        toNextParagraph(fileContent);
+    }
+
+    /**
+     * PURE
+     */
+    private boolean hasNestedList(String fileContent) {
+        int numWhiteSpaces = 0;
+        int numTabs = 0;
+        int peek = pos;
+        while (!isEOF(fileContent, peek) && (isWhiteSpaceOrTab(fileContent, peek) || isCarriageReturn(fileContent.charAt(peek)))){
+            if (isWhiteSpace(fileContent.charAt(peek))) numWhiteSpaces++;
+            if (isTab(fileContent.charAt(peek))) numTabs++;
+            peek++;
+        }
+        boolean indentMatches = numWhiteSpaces >= startWhiteSpaces + 2 || numTabs >= startTab + 1;
+        boolean starterMatches = isStartOfOrderedListItem(fileContent, peek) || isStartOfUnorderedListItem(fileContent, peek);
+        return indentMatches && starterMatches;
+    }
+
     public List<Paragraph> parseParagraphs(String fileContent) {
         while(!isEOF(fileContent, pos)) {
             handleStartWhitespaces(fileContent);
@@ -302,8 +372,8 @@ public class ParagraphParser {
                 handleIndentCodeBlock(fileContent);
                 continue;
             }
-            if (startTab >= 1){
-                pos += 1;
+            if (startTab >= 2){
+                pos += 2;
                 handleIndentCodeBlock(fileContent);
                 continue;
             }
@@ -321,6 +391,12 @@ public class ParagraphParser {
                 handleCodeBlock(fileContent, tildaNumber);
                 continue;
             }
+            System.out.println(fileContent.charAt(pos));
+            System.out.println(isStartOfUnorderedListItem(fileContent, pos));
+            if(isStartOfUnorderedListItem(fileContent, pos)) {
+                handleUnorderedList(fileContent);
+                continue;
+            }
             handleBaseParagraph(fileContent);
         }
         paragraphs.forEach(p -> {
@@ -329,6 +405,7 @@ public class ParagraphParser {
         });
         return paragraphs;
     }
+
 
 
 }
