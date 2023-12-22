@@ -68,12 +68,15 @@ class ExpressionEvalutor {
         return c == '\n' || c == '\r';
     }
     static boolean neighbourIsValidForDeuxPoints(String fileContent, int peek) {
+        if(isOOB(fileContent, peek+1) && !isOOB(fileContent, peek-1)){
+            return isDash(fileContent.charAt(peek -1));
+        }
         return
                 neighbourExists(fileContent, peek) &&
                         (isDash(fileContent.charAt(peek - 1)) &&
                                 isPipeOrCR(fileContent, peek + 1)) ||
                         (isDash(fileContent.charAt(peek + 1)) &&
-                                isPipeOrCR(fileContent, peek - 1));
+                                (isPipeOrCR(fileContent, peek - 1) || isWhiteSpace(fileContent.charAt(peek -1))));
     }
 
     static boolean isPipeAtStartLine(String fileContent, int peek) {
@@ -85,7 +88,7 @@ class ExpressionEvalutor {
     static boolean isPipeAtEndOfLine(String fileContent, int peek) {
         return isPipe(fileContent.charAt(peek)) &&
                 (isOOB(fileContent, peek + 1) ||
-                        isCarriageReturn(fileContent.charAt(peek + 1)));
+                        isBlankLine(fileContent, peek + 1));
     }
 
     static boolean hasEnoughTabForCodeBlock(int startTab) {
@@ -97,7 +100,31 @@ class ExpressionEvalutor {
 
     static boolean isTabSeparator(String fileContent, int prevPipeCount, int peek) {
         int pipeCount = 0;
+        int wsCount = 0;
+        int tCount = 0;
+        int dashCount = 0;
+        boolean hasStartingWhiteSpaces = false;
         while (!isOOB(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))) {
+            if (isWhiteSpaceAtStartLine(fileContent, peek)) {
+                while (isWhiteSpace(fileContent.charAt(peek))) {
+                    hasStartingWhiteSpaces = true;
+                    wsCount ++;
+                    peek++;
+                }
+            }
+            if (isTabAtStartLine(fileContent, peek)) {
+                while (isWhiteSpace(fileContent.charAt(peek))) {
+                    hasStartingWhiteSpaces = true;
+                    tCount ++;
+                    peek++;
+                }
+            }
+            if(hasEnoughTabForCodeBlock(wsCount)) {
+                return false;
+            }
+            if(hasEnoughTabForCodeBlock(tCount)) {
+                return false;
+            }
             if (isPipeAtStartLine(fileContent, peek)){
                 peek++;
                 continue;
@@ -106,8 +133,12 @@ class ExpressionEvalutor {
                 break;
             }
             if (isPipe(fileContent.charAt(peek))){
+                if(dashCount < 1){
+                    return false;
+                }
                 pipeCount++;
                 peek++;
+                dashCount = 0;
                 continue;
             }
             if(isDeuxPoints(fileContent.charAt(peek))) {
@@ -118,11 +149,24 @@ class ExpressionEvalutor {
             }
             if (isDash(fileContent.charAt(peek))) {
                 peek++;
+                dashCount ++;
                 continue;
             }
             return false;
         }
         return pipeCount == prevPipeCount;
+    }
+
+    static boolean isTabAtStartLine(String fileContent, int peek) {
+        return isTab(fileContent.charAt(peek)) &&
+                (isOOB(fileContent, peek - 1) ||
+                        isCarriageReturn(fileContent.charAt(peek - 1)));
+    }
+
+    static boolean isWhiteSpaceAtStartLine(String fileContent, int peek) {
+        return isWhiteSpace(fileContent.charAt(peek)) &&
+                (isOOB(fileContent, peek - 1) ||
+                        isCarriageReturn(fileContent.charAt(peek - 1)));
     }
 
     /**
@@ -257,9 +301,6 @@ class ExpressionEvalutor {
                 if(pipeCount == 0){
                     return false;
                 }
-                if(!(lineCount < 1 || prevPipeCount == pipeCount)){
-                    return false;
-                };
                 lineCount++;
                 prevPipeCount = pipeCount;
                 pipeCount = 0;
