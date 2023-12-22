@@ -3,6 +3,8 @@ package org.example;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.example.ExpressionEvalutor.*;
+
 public class ParagraphParser {
 
 
@@ -12,12 +14,6 @@ public class ParagraphParser {
     private int startTab = 0;
     List<Paragraph> paragraphs = new ArrayList<>();
 
-    /**
-     * PURE
-     */
-    private boolean isOOB(String fileContent, int pos) {
-        return pos >= fileContent.length() || pos < 0;
-    }
 
     /**
      * MUT startTab
@@ -43,31 +39,6 @@ public class ParagraphParser {
         return isWhiteSpace || isTab;
     }
 
-    /**
-     * PURE
-     */
-    private int countHeadingNumber(String fileContent, int peek) {
-        int headNumber = 0;
-        while (fileContent.charAt(peek) == '#'){
-            peek++;
-            headNumber ++;
-        }
-        return  headNumber;
-    }
-
-    /**
-     * PURE
-     */
-    private boolean isHeading(int headNumber){
-        return  headNumber > 0 && headNumber <= 6;
-    }
-
-    /**
-     * PURE
-     */
-    private boolean isCarriageReturn(char c){
-        return c == '\n' || c == '\r';
-    }
 
     /**
      * MUT startTab
@@ -87,43 +58,6 @@ public class ParagraphParser {
         startTab = 0;
         startWhiteSpaces = 0;
     }
-
-    /**
-     * PURE
-     */
-    private boolean isBlankLine(String fileContent, int peek){
-        while (!isOOB(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))){
-            if (!isWhiteSpaceOrTab(fileContent, peek)){
-                return false;
-            }
-            peek++;
-        }
-        return true;
-    }
-
-    /**
-     * PURE
-     */
-    private boolean isWhiteSpaceOrTab(String fileContent, int peek) {
-        return fileContent.charAt(peek) == ' ' || fileContent.charAt(peek) == '\t';
-    }
-
-    private boolean isWhiteSpace(char c){
-        return c == ' ';
-    }
-    private boolean isTab(char c){
-        return c == '\t';
-    }
-
-    /**
-     * PURE
-     * Peut être des soucis de performance ?
-     */
-    private boolean isBasicParagraphSeparator(String fileContent, int peek){
-        if (isOOB(fileContent, peek + 1)) return true;
-        return isCarriageReturn(fileContent.charAt(peek)) && isBlankLine(fileContent, peek + 1);
-    }
-
     /**
      * MUT pos
      */
@@ -132,25 +66,6 @@ public class ParagraphParser {
             pos++;
         }
         pos++;
-    }
-
-    /**
-     * PURE
-     */
-    private boolean isTidla(char c) {
-        return c == '`';
-    }
-
-    /**
-     * PURE
-     */
-    private int countTildas(String fileContent, int peek) {
-        int tildaNumber = 0;
-        while (isTidla(fileContent.charAt(peek))) {
-            tildaNumber++;
-            peek++;
-        }
-        return tildaNumber;
     }
 
     /**
@@ -175,58 +90,6 @@ public class ParagraphParser {
         toNextParagraph(fileContent);
     }
 
-    /**
-     * PURE
-     */
-    private boolean isBlockQuote(char c){
-        return c == '>';
-    }
-
-    /**
-     * PURE
-     */
-    private boolean isStartOfUnorderedListItem(String fileContent, int peek){
-        return
-                !isOOB(fileContent, peek+1) &&
-                fileContent.charAt(peek) == '-' &&
-                isWhiteSpaceOrTab(fileContent, peek+1);
-    }
-
-    private boolean isPipe(char c) {
-        return c == '|';
-    }
-
-    /**
-     * PURE
-     */
-    private boolean isStartOfOrderedListItem(String fileContent, int peek){
-       return !isOOB(fileContent, peek+2) &&
-                Character.isDigit(fileContent.charAt(peek)) &&
-                (fileContent.charAt(peek + 1) == ')' ||
-                fileContent.charAt(peek + 1) == '.') &&
-                isWhiteSpaceOrTab(fileContent, peek + 2);
-    }
-
-    /**
-     * PURE
-     */
-    private boolean isCodeBlock(int tildaNumber) {
-        return tildaNumber >= 3;
-    }
-
-    /**
-     * PURE
-     */
-    private boolean isEndOfCodeBlock(int startTildas, int endTildas, String fileContent, int peek){
-        boolean noneSpacesInLine = false;
-        while (!isOOB(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))){
-            if(!isWhiteSpaceOrTab(fileContent, peek)) {
-                noneSpacesInLine = true;
-            }
-            peek++;
-        }
-        return (startTildas <= endTildas) && !noneSpacesInLine;
-    }
     /**
      * MUT posPrevious
      * MUT paragraphs
@@ -272,71 +135,6 @@ public class ParagraphParser {
         toNextParagraph(fileContent);
     }
 
-    private boolean isDash(char c) {
-        return c == '-';
-    }
-    private boolean isDeuxPoints(char c){
-        return c == ':';
-    }
-
-    private boolean neighbourExists(String fileContent, int peek){
-        return !isOOB(fileContent, peek - 1) && !isOOB(fileContent, peek + 1);
-    }
-
-    private boolean isPipeOrCR(String fileContent, int peek){
-        return isPipe(fileContent.charAt(peek)) || isCarriageReturn(fileContent.charAt(peek));
-    }
-
-    private boolean neighbourIsValidForDeuxPoints(String fileContent, int peek) {
-        return
-                neighbourExists(fileContent, peek) &&
-                (isDash(fileContent.charAt(peek - 1)) &&
-                isPipeOrCR(fileContent, peek + 1)) ||
-                (isDash(fileContent.charAt(peek + 1)) &&
-                isPipeOrCR(fileContent, peek - 1));
-    }
-
-    private boolean isPipeAtStartLine(String fileContent, int peek) {
-        return isPipe(fileContent.charAt(peek)) &&
-                (isOOB(fileContent, peek - 1) ||
-                isCarriageReturn(fileContent.charAt(peek - 1)));
-    }
-
-    private boolean isPipeAtEndOfLine(String fileContent, int peek) {
-        return isPipe(fileContent.charAt(peek)) &&
-                (isOOB(fileContent, peek + 1) ||
-                isCarriageReturn(fileContent.charAt(peek + 1)));
-    }
-
-    public boolean isTabSeparator(String fileContent, int prevPipeCount, int peek) {
-        int pipeCount = 0;
-        while (!isOOB(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))) {
-            if (isPipeAtStartLine(fileContent, peek)){
-                peek++;
-                continue;
-            }
-            if (isPipeAtEndOfLine(fileContent, peek)){
-                break;
-            }
-            if (isPipe(fileContent.charAt(peek))){
-                pipeCount++;
-                peek++;
-                continue;
-            }
-            if(isDeuxPoints(fileContent.charAt(peek))) {
-                if(neighbourIsValidForDeuxPoints(fileContent, peek)) {
-                    peek++;
-                    continue;
-                }
-            }
-            if (isDash(fileContent.charAt(peek))) {
-                peek++;
-                continue;
-            }
-            return false;
-        }
-        return pipeCount == prevPipeCount;
-    }
 
     /**
      * MUT posPrevious
@@ -371,61 +169,8 @@ public class ParagraphParser {
         toNextParagraph(fileContent);
     }
 
-    private boolean isTableau(String fileContent, int peek) {
-        int pipeCount = 0;
-        int prevPipeCount = 0;
-        int lineCount = 0;
-        while (!isOOB(fileContent, peek) && !isBasicParagraphSeparator(fileContent, peek)){
-            if(lineCount == 1){
-                if(isTabSeparator(fileContent, prevPipeCount, peek)){
-                    while (!isOOB(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))) {
-                        peek++;
-                    }
-                    peek++;
-                    lineCount++;
-                    pipeCount = 0;
-                    continue;
-                } else {
-                    return false;
-                }
-            }
-            if (isPipeAtStartLine(fileContent, peek)) {
-                peek++;
-                continue;
-            }
-            if(isPipeAtEndOfLine(fileContent, peek)) {
-                peek++;
-                if(pipeCount == 0){
-                    return false;
-                }
-                if(!(lineCount < 1 || prevPipeCount == pipeCount)){
-                    return false;
-                };
-                lineCount++;
-                prevPipeCount = pipeCount;
-                pipeCount = 0;
-                if(!isBasicParagraphSeparator(fileContent, peek)){
-                    peek++;
-                }
-                continue;
-            }
-            if (isPipe(fileContent.charAt(peek))) {
-                pipeCount++;
-            }
-            if(isOOB(fileContent, peek + 1) || isCarriageReturn(fileContent.charAt(peek+1))){
-                if(pipeCount == 0) return false;
-            }
-            if (isCarriageReturn(fileContent.charAt(peek))) {
-                if(!(lineCount < 1 || prevPipeCount == pipeCount)){
-                    return false;
-                };
-                lineCount++;
-                prevPipeCount = pipeCount;
-                pipeCount = 0;
-            }
-            peek++;
-        }
-        return true;
+    private static int getPipeCount() {
+        return 0;
     }
 
     /**
@@ -457,9 +202,10 @@ public class ParagraphParser {
     }
 
     private void handleTableau(String fileContent) {
-        while (!isOOB(fileContent, pos) && !isBasicParagraphSeparator(fileContent, pos)) {
+        while (!isOOB(fileContent, pos) && !isTabBreaker(fileContent, pos)) {
             pos++;
         }
+        pos++;
         Paragraph paragraph = new Paragraph();
         paragraph.content = fileContent.substring(posPrevious, pos);
         paragraph.kind = ParagraphKind.TABLE;
@@ -542,12 +288,12 @@ public class ParagraphParser {
             if (isBlankLine(fileContent, pos)){
                 handleBlankLine(fileContent);
             }
-            if (startWhiteSpaces >= 4) {
+            if (hasEnoughWhiteSpaceForCodeBlock(startWhiteSpaces)) {
                 pos += startWhiteSpaces;
                 handleIndentCodeBlock(fileContent);
                 continue;
             }
-            if (startTab >= 2){
+            if (hasEnoughTabForCodeBlock(startTab)){
                 pos += startTab;
                 handleIndentCodeBlock(fileContent);
                 continue;
@@ -582,7 +328,6 @@ public class ParagraphParser {
         });
         return paragraphs;
     }
-
 
 }
 
