@@ -9,4 +9,5 @@ public enum ParagraphKind {
     CODE_BLOCK,
     ORDERED_LIST_ITEM,
     BLOCKQUOTE,
+    TABLE,
 }

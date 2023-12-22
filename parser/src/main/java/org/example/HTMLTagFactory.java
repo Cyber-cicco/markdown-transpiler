@@ -13,6 +13,7 @@ public class HTMLTagFactory {
     private static final HTMLTag DIV = new HTMLTag("div");
     public static final HTMLTag UL = new HTMLTag("ul");
     public static final HTMLTag OL = new HTMLTag("ol");
+    public static final HTMLTag TABLE = new HTMLTag("table");
     public static String getAsidePrefix(){
         return ASIDE.getOpeningTag();
     }
@@ -66,18 +67,24 @@ public class HTMLTagFactory {
         return UL.getClosingTag();
     }
     public static String getOlPrefix(){
-        return DIV.getOpeningTag();
+        return OL.getOpeningTag();
     }
     public static String getOlSuffix() {
         return OL.getOpeningTag();
     }
     public static String getDivPrefix(){
-        return OL.getClosingTag();
+        return DIV.getOpeningTag();
     }
     public static String getDivSuffix(){
         return DIV.getClosingTag();
     }
     public static String getBlockQuotePrefix(){
         return BLOCKQUOTE.getOpeningTag();
+    }
+    public static String getTablePrefix(){
+        return TABLE.getOpeningTag();
+    }
+    public static String getTableSuffix(){
+        return TABLE.getClosingTag();
     }
 }
