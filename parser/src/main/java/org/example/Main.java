@@ -66,6 +66,9 @@ Term 2
             """;
     public static void main(String[] args) {
         ParagraphParser parser = new ParagraphParser();
-        parser.parseParagraphs(TEST_MARKDOWN);
+        //parser.parseParagraphs(TEST_MARKDOWN);
+        //parser.pos = 1;
+        //System.out.println(parser.isTabSeparator("\n:----:|--|:---::|", 2));
     }
+
 }

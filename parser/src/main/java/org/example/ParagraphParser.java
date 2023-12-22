@@ -6,7 +6,7 @@ import java.util.List;
 public class ParagraphParser {
 
 
-    private int pos = 0;
+    public int pos = 0;
     private int posPrevious = 0;
     private int startWhiteSpaces = 0;
     private int startTab = 0;
@@ -15,8 +15,8 @@ public class ParagraphParser {
     /**
      * PURE
      */
-    private boolean isEOF(String fileContent, int pos) {
-        return pos >= fileContent.length();
+    private boolean isOOB(String fileContent, int pos) {
+        return pos >= fileContent.length() || pos < 0;
     }
 
     /**
@@ -77,7 +77,7 @@ public class ParagraphParser {
      */
     private void toNextParagraph(String fileContent){
         resetStartWhiteSpaces();
-        while (!isEOF(fileContent, pos) && isBlankLine(fileContent, pos)){
+        while (!isOOB(fileContent, pos) && isBlankLine(fileContent, pos)){
             pos++;
         }
         posPrevious = pos;
@@ -92,7 +92,7 @@ public class ParagraphParser {
      * PURE
      */
     private boolean isBlankLine(String fileContent, int peek){
-        while (!isEOF(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))){
+        while (!isOOB(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))){
             if (!isWhiteSpaceOrTab(fileContent, peek)){
                 return false;
             }
@@ -129,7 +129,7 @@ public class ParagraphParser {
      * MUT pos
      */
     private void skipLine(String fileContent){
-        while (!isEOF(fileContent, pos)) {
+        while (!isOOB(fileContent, pos)) {
             pos++;
         }
         pos++;
@@ -163,7 +163,7 @@ public class ParagraphParser {
      */
     private void handleIndentCodeBlock(String fileContent){
         posPrevious = pos;
-        while (!isEOF(fileContent, pos) && !isBasicParagraphSeparator(fileContent)){
+        while (!isOOB(fileContent, pos) && !isBasicParagraphSeparator(fileContent)){
             pos++;
         }
         pos++;
@@ -188,19 +188,24 @@ public class ParagraphParser {
      */
     private boolean isStartOfUnorderedListItem(String fileContent, int peek){
         return
-                !isEOF(fileContent, peek+1) &&
+                !isOOB(fileContent, peek+1) &&
                 fileContent.charAt(peek) == '-' &&
                 isWhiteSpaceOrTab(fileContent, peek+1);
+    }
+
+    private boolean isPipe(char c) {
+        return c == '|';
     }
 
     /**
      * PURE
      */
     private boolean isStartOfOrderedListItem(String fileContent, int peek){
-        return Character.isDigit(fileContent.charAt(peek))
-                && (fileContent.charAt(peek + 1) == ')' ||
+       return !isOOB(fileContent, peek+2) &&
+                Character.isDigit(fileContent.charAt(peek)) &&
+                (fileContent.charAt(peek + 1) == ')' ||
                 fileContent.charAt(peek + 1) == '.') &&
-                isWhiteSpaceOrTab(fileContent, peek + 1);
+                isWhiteSpaceOrTab(fileContent, peek + 2);
     }
 
     /**
@@ -215,7 +220,7 @@ public class ParagraphParser {
      */
     private boolean isEndOfCodeBlock(int startTildas, int endTildas, String fileContent, int peek){
         boolean noneSpacesInLine = false;
-        while (!isEOF(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))){
+        while (!isOOB(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))){
             if(!isWhiteSpaceOrTab(fileContent, peek)) {
                 noneSpacesInLine = true;
             }
@@ -233,7 +238,7 @@ public class ParagraphParser {
     private void handleHeading(String fileContent, int headNumber){
         pos += headNumber;
         posPrevious = pos;
-        while (!isEOF(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))){
+        while (!isOOB(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))){
             pos++;
         }
         pos++;
@@ -256,7 +261,7 @@ public class ParagraphParser {
     private void handleBlockQuote(String fileContent) {
         pos++;
         posPrevious = pos;
-        while (!isEOF(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))){
+        while (!isOOB(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))){
             pos++;
         }
         Paragraph paragraph = new Paragraph();
@@ -266,6 +271,74 @@ public class ParagraphParser {
         paragraph.suffixHTML = HTMLTagFactory.getBlockQuoteSuffix();
         paragraphs.add(paragraph);
         toNextParagraph(fileContent);
+    }
+
+    private boolean isDash(char c) {
+        return c == '-';
+    }
+    private boolean isDeuxPoints(char c){
+        return c == ':';
+    }
+
+    private boolean neighbourExists(String fileContent, int peek){
+        return !isOOB(fileContent, peek - 1) && !isOOB(fileContent, peek + 1);
+    }
+
+    private boolean isPipeOrCR(String fileContent, int peek){
+        return isPipe(fileContent.charAt(peek)) || isCarriageReturn(fileContent.charAt(peek));
+    }
+
+    private boolean neighbourIsValidForDeuxPoints(String fileContent, int peek) {
+        return
+                neighbourExists(fileContent, peek) &&
+                (isDash(fileContent.charAt(peek - 1)) &&
+                isPipeOrCR(fileContent, peek + 1)) ||
+                (isDash(fileContent.charAt(peek + 1)) &&
+                isPipeOrCR(fileContent, peek - 1));
+    }
+
+    private boolean isPipeAtStartLine(String fileContent, int peek) {
+        return !isOOB(fileContent, peek - 1) &&
+                isPipe(fileContent.charAt(peek)) &&
+                isCarriageReturn(fileContent.charAt(peek - 1));
+    }
+
+    private boolean isPipeAtEndOfLine(String fileContent, int peek) {
+        if (isOOB(fileContent, peek + 1)) return true;
+        return isPipe(fileContent.charAt(peek)) &&
+                isCarriageReturn(fileContent.charAt(peek + 1));
+    }
+
+    public boolean isTabSeparator(String fileContent, int prevPipeCount) {
+        int peek = pos;
+        int pipeCount = 0;
+        boolean isTabSeparator = false;
+        while (!isOOB(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))) {
+            if (isPipeAtStartLine(fileContent, peek)){
+                peek++;
+                continue;
+            }
+            if (isPipeAtEndOfLine(fileContent, peek)){
+                break;
+            }
+            if (isPipe(fileContent.charAt(peek))){
+                pipeCount++;
+                peek++;
+                continue;
+            }
+            if(isDeuxPoints(fileContent.charAt(peek))) {
+                if(neighbourIsValidForDeuxPoints(fileContent, peek)) {
+                    peek++;
+                    continue;
+                }
+            }
+            if (isDash(fileContent.charAt(peek))) {
+                peek++;
+                continue;
+            }
+            return false;
+        }
+        return pipeCount == prevPipeCount;
     }
 
     /**
@@ -283,13 +356,13 @@ public class ParagraphParser {
         pos += tildaNumber;
         posPrevious = pos;
         boolean isEndOfCodeBlock = false;
-        while (!isEOF(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))) {
+        while (!isOOB(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))) {
             pos++;
         }
-        if(!isEOF(fileContent, pos)) paragraph.marker = fileContent.substring(posPrevious, pos);
+        if(!isOOB(fileContent, pos)) paragraph.marker = fileContent.substring(posPrevious, pos);
         pos++;
         posPrevious = pos;
-        while (!isEOF(fileContent, pos) && !isEndOfCodeBlock) {
+        while (!isOOB(fileContent, pos) && !isEndOfCodeBlock) {
             if(isTidla(fileContent.charAt(pos))) {
                 int endTildaNumber = countTildas(fileContent, pos);
                 isEndOfCodeBlock = isEndOfCodeBlock(tildaNumber, endTildaNumber, fileContent, pos+endTildaNumber);
@@ -308,7 +381,32 @@ public class ParagraphParser {
      */
     private void handleBaseParagraph(String fileContent) {
         posPrevious = pos;
-        while (!isEOF(fileContent, pos) && !isBasicParagraphSeparator(fileContent)){
+        int pipeCount = 0;
+        int prevPipeCount = 0;
+        int lineCount = 0;
+        boolean isTableau = true;
+        if (!isOOB(fileContent, pos) && isPipe(fileContent.charAt(pos))){
+            pos++;
+        }
+        while (!isOOB(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))){
+            if (!isOOB(fileContent, pos + 1) &&
+                    isCarriageReturn(fileContent.charAt(pos))&&
+                    isPipe(fileContent.charAt(pos + 1))) {
+                pos+=2;
+                continue;
+            }
+            if (isPipe(fileContent.charAt(pos))) {
+                pipeCount++;
+            }
+            if(lineCount == 1){
+                isTabSeparator(fileContent, prevPipeCount);
+            }
+            if (isCarriageReturn(fileContent.charAt(pos))) {
+                isTableau = lineCount < 1 || prevPipeCount == pipeCount;
+                lineCount++;
+                prevPipeCount = pipeCount;
+                pipeCount = 0;
+            }
             pos++;
         }
         pos++;
@@ -322,16 +420,33 @@ public class ParagraphParser {
     }
 
     private void handleNestedLists(String fileContent) {
-        while (!isEOF(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))) {
+        while (!isOOB(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))) {
             pos++;
         }
         if(hasNestedList(fileContent)) {
             handleNestedLists(fileContent);
         }
     }
+    private void handleOrderedList(String fileContent) {
+        posPrevious = pos;
+        while (!isOOB(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))){
+            pos++;
+        }
+        pos++;
+        if (hasNestedList(fileContent)) {
+            handleNestedLists(fileContent);
+        }
+        Paragraph paragraph = new Paragraph();
+        paragraph.content = fileContent.substring(posPrevious, pos);
+        paragraph.kind = ParagraphKind.ORDERED_LIST_ITEM;
+        paragraph.prefixHTML = HTMLTagFactory.getUlPrefix();
+        paragraph.suffixHTML = HTMLTagFactory.getUlSuffix();
+        paragraphs.add(paragraph);
+        toNextParagraph(fileContent);
+    }
     private void handleUnorderedList(String fileContent) {
         posPrevious = pos;
-        while (!isEOF(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))){
+        while (!isOOB(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))){
             pos++;
         }
         pos++;
@@ -341,8 +456,8 @@ public class ParagraphParser {
         Paragraph paragraph = new Paragraph();
         paragraph.content = fileContent.substring(posPrevious, pos);
         paragraph.kind = ParagraphKind.UNORDERED_LIST_ITEM;
-        paragraph.prefixHTML = HTMLTagFactory.getUlPrefix();
-        paragraph.suffixHTML = HTMLTagFactory.getUlSuffix();
+        paragraph.prefixHTML = HTMLTagFactory.getOlPrefix();
+        paragraph.suffixHTML = HTMLTagFactory.getOlSuffix();
         paragraphs.add(paragraph);
         toNextParagraph(fileContent);
     }
@@ -354,7 +469,7 @@ public class ParagraphParser {
         int numWhiteSpaces = 0;
         int numTabs = 0;
         int peek = pos;
-        while (!isEOF(fileContent, peek) && (isWhiteSpaceOrTab(fileContent, peek) || isCarriageReturn(fileContent.charAt(peek)))){
+        while (!isOOB(fileContent, peek) && (isWhiteSpaceOrTab(fileContent, peek) || isCarriageReturn(fileContent.charAt(peek)))){
             if (isWhiteSpace(fileContent.charAt(peek))) numWhiteSpaces++;
             if (isTab(fileContent.charAt(peek))) numTabs++;
             peek++;
@@ -365,7 +480,7 @@ public class ParagraphParser {
     }
 
     public List<Paragraph> parseParagraphs(String fileContent) {
-        while(!isEOF(fileContent, pos)) {
+        while(!isOOB(fileContent, pos)) {
             handleStartWhitespaces(fileContent);
             if (startWhiteSpaces >= 4) {
                 pos += 4;
@@ -395,6 +510,10 @@ public class ParagraphParser {
             System.out.println(isStartOfUnorderedListItem(fileContent, pos));
             if(isStartOfUnorderedListItem(fileContent, pos)) {
                 handleUnorderedList(fileContent);
+                continue;
+            }
+            if(isStartOfOrderedListItem(fileContent, pos)) {
+                handleOrderedList(fileContent);
                 continue;
             }
             handleBaseParagraph(fileContent);

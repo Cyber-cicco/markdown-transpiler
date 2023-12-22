@@ -1,3 +1,8 @@
+| Header 1 | Header 2 | Header 3 |
+:-:|----------|-:|
+ Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 |
+| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 |
+| Row 3, Col 1 | Row 3, Col 2 | Row 3, Col 3 |
 # Heading 1
 ## Heading 2
 ### Heading 3
@@ -68,13 +73,13 @@ def hello_world():
   caca
 
 | Header 1 | Header 2 | Header 3 |
-|-----|----------|----------|
-| Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 |
+:-:|----------|-:
+ Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 |
 | Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 |
 | Row 3, Col 1 | Row 3, Col 2 | Row 3, Col 3 |
 
 | Left-aligned | Center-aligned | Right-aligned |
-|:-------------:|:--------------:|:-------------:|
+|:------------|:--------------:|-------------:|
 | Left          | Center         | Right         |
 
 - [x] Task 1
@@ -90,3 +95,6 @@ Term 1
 
 Term 2
 :   Definition 2
+
+| Header 1 | Header 2 | Header 3 |
+|:-:|----------|----------|
