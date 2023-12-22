@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class HTMLTag {
 
@@ -12,6 +13,8 @@ public class HTMLTag {
     }
 
     public String tag;
+    public String marker;
+    protected List<HTMLTag> children = new ArrayList<>();
     public Map<String, String> attributes = new HashMap<>();
 
     public String getAutoClosingTag(){
@@ -32,4 +35,12 @@ public class HTMLTag {
     public String getClosingTag(){
         return "</" + tag + ">";
     }
+
+    public String toString() {
+        return getOpeningTag()
+                + children.stream().map(HTMLTag::toString).collect(Collectors.joining(" "))
+                + getClosingTag();
+    }
+
+
 }

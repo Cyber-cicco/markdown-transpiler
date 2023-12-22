@@ -187,7 +187,7 @@ class ExpressionEvalutor {
      */
     static int countTildas(String fileContent, int peek) {
         int tildaNumber = 0;
-        while (isTidla(fileContent.charAt(peek))) {
+        while (!isOOB(fileContent, peek) && isTidla(fileContent.charAt(peek))) {
             tildaNumber++;
             peek++;
         }
@@ -234,11 +234,16 @@ class ExpressionEvalutor {
      * PURE
      */
     static boolean isStartOfOrderedListItem(String fileContent, int peek){
-        return !isOOB(fileContent, peek+2) &&
-                Character.isDigit(fileContent.charAt(peek)) &&
-                (fileContent.charAt(peek + 1) == ')' ||
-                        fileContent.charAt(peek + 1) == '.') &&
-                isWhiteSpaceOrTab(fileContent, peek + 2);
+        if(isOOB(fileContent, peek) || !Character.isDigit(fileContent.charAt(peek))) {
+            return false;
+        }
+        while (!isOOB(fileContent, peek) && Character.isDigit(fileContent.charAt(peek))) {
+            peek++;
+        }
+        return !isOOB(fileContent, peek+1) &&
+                (fileContent.charAt(peek) == ')' ||
+                        fileContent.charAt(peek) == '.') &&
+                isWhiteSpaceOrTab(fileContent, peek + 1);
     }
 
     /**

@@ -12,7 +12,7 @@ public class ParagraphParser {
     private int posPrevious = 0;
     private int startWhiteSpaces = 0;
     private int startTab = 0;
-    List<Paragraph> paragraphs = new ArrayList<>();
+    List<HTMLTag> bodyStructure = new ArrayList<>();
 
 
     /**
@@ -62,7 +62,7 @@ public class ParagraphParser {
      * MUT pos
      */
     private void skipLine(String fileContent){
-        while (!isOOB(fileContent, pos)) {
+        while (!isOOB(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))) {
             pos++;
         }
         pos++;
@@ -81,12 +81,11 @@ public class ParagraphParser {
             pos++;
         }
         pos++;
-        Paragraph paragraph = new Paragraph();
-        paragraph.content = fileContent.substring(posPrevious, pos);
-        paragraph.kind = ParagraphKind.CODE_BLOCK;
-        paragraph.prefixHTML = HTMLTagFactory.getAsidePrefix();
-        paragraph.suffixHTML = HTMLTagFactory.getAsideSuffix();
-        paragraphs.add(paragraph);
+        HTMLTag tag = new HTMLTag("code");
+        BlankHTMLTag child = new BlankHTMLTag();
+        child.content = fileContent.substring(posPrevious, pos);
+        tag.children.add(child);
+        bodyStructure.add(tag);
         toNextParagraph(fileContent);
     }
 
@@ -104,12 +103,11 @@ public class ParagraphParser {
             pos++;
         }
         pos++;
-        Paragraph paragraph = new Paragraph();
-        paragraph.content = fileContent.substring(posPrevious, pos);
-        paragraph.kind = ParagraphKind.HEADING;
-        paragraph.prefixHTML = HTMLTagFactory.getHeadingPrefix(headNumber);
-        paragraph.suffixHTML = HTMLTagFactory.getHeadingSuffix(headNumber);
-        paragraphs.add(paragraph);
+        HTMLTag tag = new HTMLTag("h" + headNumber);
+        BlankHTMLTag child = new BlankHTMLTag();
+        child.content = fileContent.substring(posPrevious, pos);
+        tag.children.add(child);
+        bodyStructure.add(tag);
         toNextParagraph(fileContent);
     }
 
@@ -126,12 +124,11 @@ public class ParagraphParser {
         while (!isOOB(fileContent, pos) && !isBasicParagraphSeparator(fileContent, pos)){
             pos++;
         }
-        Paragraph paragraph = new Paragraph();
-        paragraph.content = fileContent.substring(posPrevious, pos);
-        paragraph.kind = ParagraphKind.BLOCKQUOTE;
-        paragraph.prefixHTML = HTMLTagFactory.getBlockQuotePrefix();
-        paragraph.suffixHTML = HTMLTagFactory.getBlockQuoteSuffix();
-        paragraphs.add(paragraph);
+        HTMLTag tag = new HTMLTag("blockquote");
+        BlankHTMLTag child = new BlankHTMLTag();
+        child.content = fileContent.substring(posPrevious, pos);
+        tag.children.add(child);
+        bodyStructure.add(tag);
         toNextParagraph(fileContent);
     }
 
@@ -144,28 +141,28 @@ public class ParagraphParser {
      * MUT startWhiteSpaces
      */
     private void handleCodeBlock(String fileContent, int tildaNumber) {
-        Paragraph paragraph = new Paragraph();
-        paragraph.kind = ParagraphKind.CODE_BLOCK;
-        paragraph.prefixHTML = HTMLTagFactory.getCodePrefix();
-        paragraph.suffixHTML = HTMLTagFactory.getCodeSuffix();
+        HTMLTag tag = new HTMLTag("code");
         pos += tildaNumber;
         posPrevious = pos;
-        boolean isEndOfCodeBlock = false;
         while (!isOOB(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))) {
             pos++;
         }
-        if(!isOOB(fileContent, pos)) paragraph.marker = fileContent.substring(posPrevious, pos);
+        if(!isOOB(fileContent, pos)) tag.marker = fileContent.substring(posPrevious, pos);
         pos++;
         posPrevious = pos;
-        while (!isOOB(fileContent, pos) && !isEndOfCodeBlock) {
+        while (!isOOB(fileContent, pos)) {
             if(isTidla(fileContent.charAt(pos))) {
                 int endTildaNumber = countTildas(fileContent, pos);
-                isEndOfCodeBlock = isEndOfCodeBlock(tildaNumber, endTildaNumber, fileContent, pos+endTildaNumber);
+                if (isEndOfCodeBlock(tildaNumber, endTildaNumber, fileContent, pos+endTildaNumber)) break;
             }
             pos++;
         }
-        paragraph.content = fileContent.substring(posPrevious, pos);
-        paragraphs.add(paragraph);
+        BlankHTMLTag child = new BlankHTMLTag();
+        child.content = fileContent.substring(posPrevious, pos);
+        tag.children.add(child);
+        bodyStructure.add(tag);
+        pos++;
+        skipLine(fileContent);
         toNextParagraph(fileContent);
     }
 
@@ -192,12 +189,11 @@ public class ParagraphParser {
         while (!isOOB(fileContent, pos) && !isBasicParagraphSeparator(fileContent, pos)) {
             pos++;
         }
-        Paragraph paragraph = new Paragraph();
-        paragraph.content = fileContent.substring(posPrevious, pos);
-        paragraph.kind = ParagraphKind.SIMPLE;
-        paragraph.prefixHTML = HTMLTagFactory.getDivPrefix();
-        paragraph.suffixHTML = HTMLTagFactory.getDivSuffix();
-        paragraphs.add(paragraph);
+        HTMLTag tag = new HTMLTag("div");
+        BlankHTMLTag child = new BlankHTMLTag();
+        child.content = fileContent.substring(posPrevious, pos);
+        tag.children.add(child);
+        bodyStructure.add(tag);
         toNextParagraph(fileContent);
     }
 
@@ -206,21 +202,21 @@ public class ParagraphParser {
             pos++;
         }
         pos++;
-        Paragraph paragraph = new Paragraph();
-        paragraph.content = fileContent.substring(posPrevious, pos);
-        paragraph.kind = ParagraphKind.TABLE;
-        paragraph.prefixHTML = HTMLTagFactory.getTablePrefix();
-        paragraph.suffixHTML = HTMLTagFactory.getTableSuffix();
-        paragraphs.add(paragraph);
+        HTMLTag tag = new HTMLTag("table");
+        BlankHTMLTag child = new BlankHTMLTag();
+        child.content = fileContent.substring(posPrevious, pos);
+        tag.children.add(child);
+        bodyStructure.add(tag);
         toNextParagraph(fileContent);
     }
 
-    private void handleNestedLists(String fileContent) {
+    private void handleNestedLists(String fileContent, int numWhiteSpaces, int numTabs) {
         while (!isOOB(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))) {
             pos++;
         }
-        if(hasNestedList(fileContent)) {
-            handleNestedLists(fileContent);
+        pos++;
+        if(hasNestedList(fileContent, numWhiteSpaces, numTabs)) {
+            handleNestedLists(fileContent, numWhiteSpaces + 4, numTabs + 1);
         }
     }
     private void handleOrderedList(String fileContent) {
@@ -229,15 +225,14 @@ public class ParagraphParser {
             pos++;
         }
         pos++;
-        if (hasNestedList(fileContent)) {
-            handleNestedLists(fileContent);
+        if (hasNestedList(fileContent, startWhiteSpaces, startTab)) {
+            handleNestedLists(fileContent, startWhiteSpaces, startTab);
         }
-        Paragraph paragraph = new Paragraph();
-        paragraph.content = fileContent.substring(posPrevious, pos);
-        paragraph.kind = ParagraphKind.ORDERED_LIST_ITEM;
-        paragraph.prefixHTML = HTMLTagFactory.getUlPrefix();
-        paragraph.suffixHTML = HTMLTagFactory.getUlSuffix();
-        paragraphs.add(paragraph);
+        HTMLTag tag = new HTMLTag("ol");
+        BlankHTMLTag child = new BlankHTMLTag();
+        child.content = fileContent.substring(posPrevious, pos);
+        tag.children.add(child);
+        bodyStructure.add(tag);
         toNextParagraph(fileContent);
     }
     private void handleUnorderedList(String fileContent) {
@@ -246,31 +241,30 @@ public class ParagraphParser {
             pos++;
         }
         pos++;
-        if (hasNestedList(fileContent)) {
-            handleNestedLists(fileContent);
+        if (hasNestedList(fileContent, startWhiteSpaces, startTab)) {
+            handleNestedLists(fileContent, startWhiteSpaces, startTab);
         }
-        Paragraph paragraph = new Paragraph();
-        paragraph.content = fileContent.substring(posPrevious, pos);
-        paragraph.kind = ParagraphKind.UNORDERED_LIST_ITEM;
-        paragraph.prefixHTML = HTMLTagFactory.getOlPrefix();
-        paragraph.suffixHTML = HTMLTagFactory.getOlSuffix();
-        paragraphs.add(paragraph);
+        HTMLTag tag = new HTMLTag("ul");
+        BlankHTMLTag child = new BlankHTMLTag();
+        child.content = fileContent.substring(posPrevious, pos);
+        tag.children.add(child);
+        bodyStructure.add(tag);
         toNextParagraph(fileContent);
     }
 
     /**
      * PURE
      */
-    private boolean hasNestedList(String fileContent) {
+    private boolean hasNestedList(String fileContent, int numWhiteSpacesB, int numTabsB) {
         int numWhiteSpaces = 0;
         int numTabs = 0;
         int peek = pos;
-        while (!isOOB(fileContent, peek) && (isWhiteSpaceOrTab(fileContent, peek) || isCarriageReturn(fileContent.charAt(peek)))){
+        while (!isOOB(fileContent, peek) && (isWhiteSpaceOrTab(fileContent, peek))){
             if (isWhiteSpace(fileContent.charAt(peek))) numWhiteSpaces++;
             if (isTab(fileContent.charAt(peek))) numTabs++;
             peek++;
         }
-        boolean indentMatches = numWhiteSpaces >= startWhiteSpaces + 2 || numTabs >= startTab + 1;
+        boolean indentMatches = numWhiteSpaces >= numWhiteSpacesB + 2 || numTabs >= numTabsB + 1;
         boolean starterMatches = isStartOfOrderedListItem(fileContent, peek) || isStartOfUnorderedListItem(fileContent, peek);
         return indentMatches && starterMatches;
     }
@@ -282,7 +276,7 @@ public class ParagraphParser {
         pos++;
     }
 
-    public List<Paragraph> parseParagraphs(String fileContent) {
+    public List<HTMLTag> parseParagraphs(String fileContent) {
         while(!isOOB(fileContent, pos)) {
             handleStartWhitespaces(fileContent);
             if (isBlankLine(fileContent, pos)){
@@ -322,11 +316,11 @@ public class ParagraphParser {
             }
             handleBaseParagraphOrTableau(fileContent);
         }
-        paragraphs.forEach(p -> {
+        bodyStructure.forEach(p -> {
             System.out.println(p);
             System.out.println();
         });
-        return paragraphs;
+        return bodyStructure;
     }
 
 }

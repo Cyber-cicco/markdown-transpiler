@@ -77,4 +77,53 @@ public class BooleanTester {
         assertFalse(isPipeAtEndOfLine("|\t     c", 0));
         assertFalse(isPipeAtEndOfLine("|\t|", 0));
     }
+    @Test
+    public void testIsOOB() {
+        assertTrue(isOOB("      ", -1));
+        assertTrue(isOOB("1234", 4));
+        assertTrue(isOOB("", 0));
+        assertFalse(isOOB("1234", 0));
+        assertFalse(isOOB("1234", 3));
+    }
+
+    @Test
+    public void testCountTilda(){
+        assertEquals(countTildas("```", 0), 3);
+        assertEquals(countTildas("```\ntest", 0), 3);
+        assertEquals(countTildas("```test", 0), 3);
+        assertEquals(countTildas("t`est", 0), 0);
+    }
+
+    @Test
+    public void testNeighbourExists() {
+        assertTrue(neighbourExists(" u ", 1));
+        assertTrue(neighbourExists("\nu\n", 1));
+        assertFalse(neighbourExists("\nu", 1));
+        assertFalse(neighbourExists("u\n", 0));
+        assertFalse(neighbourExists(" u ", 0));
+    }
+
+    @Test
+    public void testIfStartOfOL() {
+        assertTrue(isStartOfOrderedListItem("1) ", 0));
+        assertTrue(isStartOfOrderedListItem("1. ", 0));
+        assertTrue(isStartOfOrderedListItem("10. ", 0));
+        assertTrue(isStartOfOrderedListItem("100) ", 0));
+        assertFalse(isStartOfOrderedListItem("1- ", 0));
+        assertFalse(isStartOfOrderedListItem("1- ", 0));
+    }
+    @Test
+    public void testIfStartOfUL() {
+        assertTrue(isStartOfUnorderedListItem("- ", 0));
+        assertTrue(isStartOfUnorderedListItem("\n- ", 1));
+        assertFalse(isStartOfUnorderedListItem("-", 0));
+    }
+
+    @Test
+    public void testIsEndOfCodeBlock() {
+        assertTrue((isEndOfCodeBlock(3, 3, "\n", 0)));
+        assertTrue((isEndOfCodeBlock(3, 3, "\t   \t\r", 0)));
+        assertTrue((isEndOfCodeBlock(3, 7, "\t   \t\r", 0)));
+        assertFalse((isEndOfCodeBlock(3, 2, "\n", 0)));
+    }
 }

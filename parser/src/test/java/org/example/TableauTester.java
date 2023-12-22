@@ -77,6 +77,11 @@ Header 1 | Header 2 | Header 3 |
         assertTrue(isTabBreaker("\n\ntest", 0));
         assertTrue(isTabBreaker("\n     \ntest", 0));
         assertTrue(isTabBreaker("\n", 0));
+        assertTrue(isTabBreaker("\n- ", 0));
+        assertTrue(isTabBreaker("\n   - ", 0));
+        assertTrue(isTabBreaker("\n     test", 0));
+        assertTrue(isTabBreaker("\n     2) ", 0));
+        assertFalse(isTabBreaker("\n   test", 0));
         assertFalse(isTabBreaker("\n################# test", 0));
         assertFalse(isTabBreaker("\ntest", 0));
     }
