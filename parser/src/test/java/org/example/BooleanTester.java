@@ -13,7 +13,7 @@ public class BooleanTester {
         assertTrue(isBlankLine("\r ", 0));
         assertTrue(isBlankLine("\t\r ", 0));
         assertTrue(isBlankLine("", 0));
-        assertFalse(isBlankLine("      \tcaca", 0));
+        assertFalse(isBlankLine("      \ttest", 0));
     }
 
     @Test
@@ -29,19 +29,19 @@ public class BooleanTester {
     public void testIsBasicParagraphSeparator() {
         assertTrue(isBasicParagraphSeparator("\n ", 0));
         assertTrue(isBasicParagraphSeparator("\n", 0));
-        assertTrue(isBasicParagraphSeparator("\n\t\rcaca", 0));
-        assertFalse(isBasicParagraphSeparator("\n\tprout", 0));
-        assertFalse(isBasicParagraphSeparator("caca", 0));
+        assertTrue(isBasicParagraphSeparator("\n\t\rtest", 0));
+        assertFalse(isBasicParagraphSeparator("\n\tfoo", 0));
+        assertFalse(isBasicParagraphSeparator("test", 0));
     }
 
     @Test
     public void testIsHeading() {
-        assertTrue(isHeading(countHeadingNumber("### caca", 0)));
-        assertTrue(isHeading(countHeadingNumber("AZ### caca", 2)));
+        assertTrue(isHeading(countHeadingNumber("### test", 0)));
+        assertTrue(isHeading(countHeadingNumber("AZ### test", 2)));
         assertTrue(isHeading(countHeadingNumber("#", 0)));
-        assertFalse(isHeading(countHeadingNumber("######## caca", 0)));
-        assertFalse(isHeading(countHeadingNumber("caca", 0)));
-        assertFalse(isHeading(countHeadingNumber("caca", 0)));
-        assertFalse(isHeading(countHeadingNumber("#caca", 0)));
+        assertFalse(isHeading(countHeadingNumber("######## test", 0)));
+        assertFalse(isHeading(countHeadingNumber("test", 0)));
+        assertFalse(isHeading(countHeadingNumber("test", 0)));
+        assertFalse(isHeading(countHeadingNumber("#test", 0)));
     }
 }

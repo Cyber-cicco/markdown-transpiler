@@ -18,38 +18,38 @@ class TableauTester {
 | Header 1 | Header 2 | Header 3 |
 |:-----:|----------|----------|
 | Row 1, Col 1 
-| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | caca
+| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | test
 | Row 3, Col 1 | Row 3, Col 2 | Row 3, Col 3 |
             """;
     private final String TAB_3 = """
  Header 1 | Header 2 | Header 3 
 |:-----|:----------:|----------:|
 | Row 1, Col 1 
-| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | caca
+| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | test
 | Row 3, Col 1 | Row 3, Col 2 | Row 3, Col 3 |
             """;
     private final String TAB_4 = """
  Header 1 | Header 2  Header 3 
 |:-----|:----------:|----------:|
 | Row 1, Col 1 
-| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | caca
+| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | test
 | Row 3, Col 1 | Row 3, Col 2 | Row 3, Col 3 |
             """;
     private final String TAB_5 = """
  Header 1 | Header 2  | Header 3 
 |:-----|:----------:|---:-------:|
 | Row 1, Col 1 
-| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | caca
+| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | test
 | Row 3, Col 1 | Row 3, Col 2 | Row 3, Col 3 |
             """;
     @Test
     public void testIsTabBreaker(){
-        assertTrue(isTabBreaker("\n# Caca", 0));
-        assertTrue(isTabBreaker("\n\nCaca", 0));
-        assertTrue(isTabBreaker("\n     \ncaca", 0));
+        assertTrue(isTabBreaker("\n# test", 0));
+        assertTrue(isTabBreaker("\n\ntest", 0));
+        assertTrue(isTabBreaker("\n     \ntest", 0));
         assertTrue(isTabBreaker("\n", 0));
-        assertTrue(!isTabBreaker("\n################# Caca", 0));
-        assertTrue(!isTabBreaker("\nCaca", 0));
+        assertTrue(!isTabBreaker("\n################# test", 0));
+        assertTrue(!isTabBreaker("\ntest", 0));
     }
 
     @Test
