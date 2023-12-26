@@ -111,4 +111,19 @@ Header 1 | Header 2 | Header 3 |
         assertFalse(neighbourIsValidForDeuxPoints("-:-", 1));
         assertFalse(neighbourIsValidForDeuxPoints("c:-", 1));
     }
+
+    @Test
+    public void testIsTabSeparator() {
+        assertTrue(isTabSeparator("\n|:-:|----------|-:|\n", 2, 1));
+        assertTrue(isTabSeparator("\n:-:|----------|-:|\n", 2, 1));
+        assertTrue(isTabSeparator("\n :-:|----------|-:|\n", 2, 1));
+        assertTrue(isTabSeparator("\n   |:-:|----------|-:|\n", 2, 1));
+        assertTrue(isTabSeparator("\n   :-:|----------|-:|\n", 2, 1));
+        assertTrue(isTabSeparator("\n   :-:|----------|-:\n", 2, 1));
+        assertTrue(isTabSeparator("\n :-:|-|-:\t\n", 2, 1));
+        assertFalse(isTabSeparator("\n   :-:|----------|:\n", 2, 1));
+        assertFalse(isTabSeparator("\n   :-:|---|-------|:\n", 2, 1));
+        assertFalse(isTabSeparator("\n |   \n", 1, 1));
+        assertFalse(isTabSeparator("\n    :-:|----------|-:\n", 2, 1));
+    }
 }

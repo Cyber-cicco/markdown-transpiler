@@ -39,15 +39,13 @@ caca
 
 - Unordered List Item 1
 - Unordered List Item 2
- - caca
-- Nested Unordered List Item
+    - Nested Unordered List Item
 - Unordered List Item 3
 
 3. Ordered List Item 1
 
 2) Ordered List Item 2
-
-   3 Nested Ordered List Item \s
+    3 Nested Ordered List Item \s
 
  5) caca
 
@@ -102,20 +100,28 @@ Term 2
 
 | Header 1 | Header 2 | Header 3 |
 |:-:|----------|----------|            
+| Header 1 | Header 2 | Header 3 |
+>|:-:|----------|----------|            
 """;
     public static final String TEST_TABLEAU = """
-
 | Header 1 | Header 2 | Header 3 |
-|:-----:|----------|----------|
+   :-:|----------|-:                       
 | Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 |
 | Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 |
 | Row 3, Col 1 | Row 3, Col 2 | Row 3, Col 3 |
-    
+
 oui
+            """;
+
+    public static final String TEST_LIST = """
+- Unordered List Item 1
+- Unordered List Item 2
+    - Nested Unordered List Item
+- Unordered List Item 3
 """;
     public static void main(String[] args) {
         ParagraphParser parser = new ParagraphParser();
-        parser.parseParagraphs(TEST_MARKDOWN);
+        parser.parseParagraphs(TEST_LIST);
     }
 
 }

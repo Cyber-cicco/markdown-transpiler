@@ -210,48 +210,51 @@ public class ParagraphParser {
         toNextParagraph(fileContent);
     }
 
-    private void handleNestedLists(String fileContent, int numWhiteSpaces, int numTabs) {
-        while (!isOOB(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))) {
+    private void handleList(String fileContent, int startingWhiteSpaces) {
+        HTMLTag tag = new HTMLTag("li");
+        String sublistTag = "";
+        while (!isOOB(fileContent, pos)) {
+            if (isStartOfOrderedListItem(fileContent, pos)) {
+                sublistTag = "ol";
+                posPrevious = pos;
+            }
+            if (isStartOfUnorderedListItem(fileContent, pos)) {
+                sublistTag = "ul";
+                pos++;
+                posPrevious = pos;
+            }
+            if(!isOOB(fileContent, pos + startingWhiteSpaces + 1) && isCarriageReturn(fileContent.charAt(pos))){
+                while (isWhiteSpace(fileContent.charAt(pos)) || isCarriageReturn(fileContent.charAt(pos))) {
+                    pos++;
+                }
+                System.out.println(fileContent.charAt(pos));
+                if(isStartOfUnorderedListItem(fileContent, pos) || isStartOfOrderedListItem(fileContent, pos)){
+                    handleListBreakPoint(fileContent, sublistTag, tag);
+                    continue;
+                }
+            }
+            if(isBasicParagraphSeparator(fileContent, pos)){
+                handleListBreakPoint(fileContent, sublistTag, tag);
+            }
             pos++;
         }
         pos++;
-        if(hasNestedList(fileContent, numWhiteSpaces, numTabs)) {
-            handleNestedLists(fileContent, numWhiteSpaces + 4, numTabs + 1);
-        }
-    }
-    private void handleOrderedList(String fileContent) {
-        posPrevious = pos;
-        while (!isOOB(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))){
-            pos++;
-        }
-        pos++;
-        if (hasNestedList(fileContent, startWhiteSpaces, startTab)) {
-            handleNestedLists(fileContent, startWhiteSpaces, startTab);
-        }
-        HTMLTag tag = new HTMLTag("ol");
-        BlankHTMLTag child = new BlankHTMLTag();
-        child.content = fileContent.substring(posPrevious, pos);
-        tag.children.add(child);
-        bodyStructure.add(tag);
-        toNextParagraph(fileContent);
-    }
-    private void handleUnorderedList(String fileContent) {
-        posPrevious = pos;
-        while (!isOOB(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))){
-            pos++;
-        }
-        pos++;
-        if (hasNestedList(fileContent, startWhiteSpaces, startTab)) {
-            handleNestedLists(fileContent, startWhiteSpaces, startTab);
-        }
-        HTMLTag tag = new HTMLTag("ul");
-        BlankHTMLTag child = new BlankHTMLTag();
-        child.content = fileContent.substring(posPrevious, pos);
-        tag.children.add(child);
         bodyStructure.add(tag);
         toNextParagraph(fileContent);
     }
 
+    private void handleListBreakPoint(String fileContent, String sublistTag, HTMLTag tag) {
+        HTMLTag unorderedItem = new HTMLTag(sublistTag);
+        BlankHTMLTag content = new BlankHTMLTag();
+        content.content = fileContent.substring(posPrevious, pos);
+        unorderedItem.children.add(content);
+        tag.children.add(unorderedItem);
+        pos++;
+        while (!isOOB(fileContent, pos) && isBlankLine(fileContent, pos)){
+            skipLine(fileContent);
+        }
+        pos++;
+    }
     /**
      * PURE
      */
@@ -306,12 +309,8 @@ public class ParagraphParser {
                 handleCodeBlock(fileContent, tildaNumber);
                 continue;
             }
-            if(isStartOfUnorderedListItem(fileContent, pos)) {
-                handleUnorderedList(fileContent);
-                continue;
-            }
-            if(isStartOfOrderedListItem(fileContent, pos)) {
-                handleOrderedList(fileContent);
+            if(isStartOfUnorderedListItem(fileContent, pos) || isStartOfOrderedListItem(fileContent, pos)) {
+                handleList(fileContent, pos);
                 continue;
             }
             handleBaseParagraphOrTableau(fileContent);

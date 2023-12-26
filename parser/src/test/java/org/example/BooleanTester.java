@@ -126,4 +126,11 @@ public class BooleanTester {
         assertTrue((isEndOfCodeBlock(3, 7, "\t   \t\r", 0)));
         assertFalse((isEndOfCodeBlock(3, 2, "\n", 0)));
     }
+
+    @Test
+    public void testPreviousIsBlank() {
+        assertTrue(previousIsBlankAndUnderAmount("   |", 2));
+        assertTrue(previousIsBlankAndUnderAmount("\n   |", 3));
+        assertFalse(previousIsBlankAndUnderAmount("\n    |", 4));
+    }
 }

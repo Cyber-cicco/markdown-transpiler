@@ -2,6 +2,7 @@ package org.example;
 
 class ExpressionEvalutor {
 
+    private static final int NUM_SW = 4;
 
     /**
      * PURE
@@ -74,7 +75,7 @@ class ExpressionEvalutor {
         return
                 neighbourExists(fileContent, peek) &&
                         (isDash(fileContent.charAt(peek - 1)) &&
-                                isPipeOrCR(fileContent, peek + 1)) ||
+                                isPipeOrBlankLine(fileContent, peek + 1)) ||
                         (isDash(fileContent.charAt(peek + 1)) &&
                                 (isPipeOrCR(fileContent, peek - 1) || isWhiteSpace(fileContent.charAt(peek -1))));
     }
@@ -82,7 +83,19 @@ class ExpressionEvalutor {
     static boolean isPipeAtStartLine(String fileContent, int peek) {
         return isPipe(fileContent.charAt(peek)) &&
                 (isOOB(fileContent, peek - 1) ||
-                        isCarriageReturn(fileContent.charAt(peek - 1)));
+                        previousIsBlankAndUnderAmount(fileContent, peek - 1));
+    }
+
+    static boolean previousIsBlankAndUnderAmount(String fileContent, int peek){
+        int startWhiteSpaces = 0;
+        while (!isOOB(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))){
+            if(!isWhiteSpaceOrTab(fileContent, peek)) {
+                return false;
+            }
+            peek--;
+            startWhiteSpaces++;
+        }
+        return startWhiteSpaces < NUM_SW;
     }
 
     static boolean isPipeAtEndOfLine(String fileContent, int peek) {
@@ -95,7 +108,7 @@ class ExpressionEvalutor {
         return startTab >= 2;
     }
     static boolean hasEnoughWhiteSpaceForCodeBlock(int startWhiteSpaces) {
-        return startWhiteSpaces >= 4;
+        return startWhiteSpaces >= NUM_SW;
     }
 
     static boolean isTabSeparator(String fileContent, int prevPipeCount, int peek) {
@@ -103,23 +116,23 @@ class ExpressionEvalutor {
         int wsCount = 0;
         int tCount = 0;
         int dashCount = 0;
-        boolean hasStartingWhiteSpaces = false;
         while (!isOOB(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))) {
             if (isWhiteSpaceAtStartLine(fileContent, peek)) {
                 while (isWhiteSpace(fileContent.charAt(peek))) {
-                    hasStartingWhiteSpaces = true;
                     wsCount ++;
                     peek++;
                 }
             }
             if (isTabAtStartLine(fileContent, peek)) {
                 while (isWhiteSpace(fileContent.charAt(peek))) {
-                    hasStartingWhiteSpaces = true;
                     tCount ++;
                     peek++;
                 }
             }
-            if(hasEnoughTabForCodeBlock(wsCount)) {
+            if(isBlankLine(fileContent, peek)){
+                break;
+            }
+            if(hasEnoughWhiteSpaceForCodeBlock(wsCount)) {
                 return false;
             }
             if(hasEnoughTabForCodeBlock(tCount)) {
@@ -206,7 +219,11 @@ class ExpressionEvalutor {
     }
 
     static boolean isPipeOrCR(String fileContent, int peek){
-        return isPipe(fileContent.charAt(peek)) || isCarriageReturn(fileContent.charAt(peek));
+        return isPipe(fileContent.charAt(peek)) || isBlankLine(fileContent,peek);
+    }
+
+    static boolean isPipeOrBlankLine(String fileContent, int peek) {
+        return isPipe(fileContent.charAt(peek)) || isBlankLine(fileContent, peek);
     }
 
     /**
@@ -281,17 +298,15 @@ class ExpressionEvalutor {
     }
     static boolean isTableau(String fileContent, int peek) {
         int pipeCount = 0;
-        int prevPipeCount = 0;
         int lineCount = 0;
         while (!isOOB(fileContent, peek) && lineCount < 2){
             if(lineCount == 1){
-                if(isTabSeparator(fileContent, prevPipeCount, peek)){
+                if(isTabSeparator(fileContent, pipeCount, peek)){
                     while (!isOOB(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))) {
                         peek++;
                     }
                     peek++;
                     lineCount++;
-                    pipeCount = 0;
                     continue;
                 } else {
                     return false;
@@ -307,8 +322,6 @@ class ExpressionEvalutor {
                     return false;
                 }
                 lineCount++;
-                prevPipeCount = pipeCount;
-                pipeCount = 0;
                 if(!isBasicParagraphSeparator(fileContent, peek)){
                     peek++;
                 }
@@ -321,15 +334,14 @@ class ExpressionEvalutor {
                 if(pipeCount == 0) return false;
             }
             if (isCarriageReturn(fileContent.charAt(peek))) {
-                if(!(lineCount < 1 || prevPipeCount == pipeCount)){
-                    return false;
-                };
                 lineCount++;
-                prevPipeCount = pipeCount;
-                pipeCount = 0;
             }
             peek++;
         }
         return true;
+    }
+
+    static boolean checkIfStartOfExpression(char c) {
+        return c == '*' || c == '~' || c == '[' || c == '!' || c == '`' || c == '(';
     }
 }

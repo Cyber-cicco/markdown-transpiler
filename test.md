@@ -2,7 +2,7 @@
  |-|-|
 
 Header 1 | Header 2 | Header 3 |
-  :-:|----------|-:|
+   :-:|----------|-:                       
  Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 |
 | Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 |
 | Row 3, Col 1 | Row 3, Col 2 | Row 3, Col 3 
@@ -13,6 +13,12 @@ Header 1 | Header 2 | Header 3 |
  caca
 2) caca
  `caca`
+
+- Unordered List Item 1
+- Unordered List Item 2
+    - Nested Unordered List Item
+- Unordered List Item 3
+
 
 caca
 ## Heading 2
@@ -25,6 +31,8 @@ cacacaac
                 ggcaca
 
 **Bold Text**
+
+***Bold Italic Text***
 
 *Italic Text*
 
@@ -49,19 +57,23 @@ caca
 
 2) Ordered List Item 2
 
-    3 Nested Ordered List Item  
+    3) Nested Ordered List Item  
 
   5) caca
 
+caca
+
+
   - pipi
 
-3. Ordered List Item 3
+  3. Ordered List Item 3
 
-- Unordered List Item 1
+  - Unordered List Item 1
 
-- Unordered List Item 2
+  - Unordered List Item 2
 
   - Nested Unordered List Item
+  - caca
 
   
 
@@ -78,9 +90,9 @@ caca
 >caca
 caca
 
-[Link](https://www.example.com)
+(https://www.example.com)
 
-![Image Alt Text](https://placekitten.com/200/306)
+![Image Alt Text](https://placekitten.com/200/304)
 
 `Inline Code`
 
@@ -90,7 +102,8 @@ def hello_world():
  ``   print("Hello, World!")
 ```
 
-  caca
+  [caca] 
+
 
 | Header 1 | Header 2 | Header 3 |
 :-:|----------|-:
@@ -107,6 +120,7 @@ def hello_world():
 - [ ] Task 3
 
 This is some text with a footnote[^1].
+
 
 [^1]: Here is the footnote content.
 
