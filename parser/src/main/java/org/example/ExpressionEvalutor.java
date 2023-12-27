@@ -81,13 +81,13 @@ class ExpressionEvalutor {
                                 (isPipeOrCR(fileContent, peek - 1) || isWhiteSpace(fileContent.charAt(peek -1))));
     }
 
-    static boolean isPipeAtStartLine(String fileContent, int peek) {
+    static boolean isPipeAtStartLine(String fileContent, int peek, int indentOfTag) {
         return isPipe(fileContent.charAt(peek)) &&
                 (isOOB(fileContent, peek - 1) ||
-                        previousIsBlankAndUnderAmount(fileContent, peek - 1));
+                        previousIsBlankAndUnderAmount(fileContent, peek - 1, indentOfTag));
     }
 
-    static boolean previousIsBlankAndUnderAmount(String fileContent, int peek){
+    static boolean previousIsBlankAndUnderAmount(String fileContent, int peek, int indentOfTag){
         int startWhiteSpaces = 0;
         while (!isOOB(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))){
             if(!isWhiteSpaceOrTab(fileContent, peek)) {
@@ -96,7 +96,7 @@ class ExpressionEvalutor {
             peek--;
             startWhiteSpaces++;
         }
-        return startWhiteSpaces < NUM_SW;
+        return startWhiteSpaces < NUM_SW + indentOfTag;
     }
 
     static boolean isPipeAtEndOfLine(String fileContent, int peek) {
@@ -139,7 +139,7 @@ class ExpressionEvalutor {
             if(hasEnoughTabForCodeBlock(tCount)) {
                 return false;
             }
-            if (isPipeAtStartLine(fileContent, peek)){
+            if (isPipeAtStartLine(fileContent, peek, indentOfTag)){
                 peek++;
                 continue;
             }
@@ -321,7 +321,7 @@ class ExpressionEvalutor {
                     return false;
                 }
             }
-            if (isPipeAtStartLine(fileContent, peek)) {
+            if (isPipeAtStartLine(fileContent, peek, indentOfTag)) {
                 peek++;
                 continue;
             }

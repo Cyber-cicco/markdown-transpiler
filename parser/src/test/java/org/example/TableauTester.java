@@ -71,6 +71,13 @@ Header 1 | Header 2 | Header 3 |
  |||
  |-|-|
             """;
+    private final String TAB_11 = """
+    | Header 1 | Header 2 | Header 3 |
+    |:-----:|----------|----------|
+    | Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 |
+    | Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 |
+    | Row 3, Col 1 | Row 3, Col 2 | Row 3, Col 3 |
+            """;
     @Test
     public void testIsTabBreaker(){
         assertTrue(isTabBreaker("\n# test", 0, 0));
@@ -94,6 +101,7 @@ Header 1 | Header 2 | Header 3 |
         assertTrue(isTableau(TAB_3, 0, 0));
         assertTrue(isTableau(TAB_7, 0, 0));
         assertTrue(isTableau(TAB_10, 0, 0));
+        assertTrue(isTableau(TAB_11, 0, 2));
         assertFalse(isTableau(TAB_4, 0, 0));
         assertFalse(isTableau(TAB_5, 0, 0));
         assertFalse(isTableau(TAB_6, 0, 0));

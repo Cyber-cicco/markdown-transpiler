@@ -1,7 +1,5 @@
 package org.example;
 
-import java.util.List;
-
 import static org.example.ExpressionEvalutor.*;
 
 public class ParagraphParser {
@@ -229,52 +227,55 @@ public class ParagraphParser {
         toNextParagraph(fileContent);
     }
 
-    private void handleList(String fileContent, int startingWhiteSpaces, HTMLTag parentTag, int indentOfTag) {
-        HTMLTag tag = new HTMLTag("li");
-        String sublistTag = "";
+    public HTMLTag getListTagBasedOnStart(String fileContent){
+        if(isStartOfOrderedListItem(fileContent, pos)) {
+            return new HTMLTag("ol");
+        }
+        return new HTMLTag("ul");
+    }
+
+    private void walkList(String fileContent, HTMLTag listItem, HTMLTag list, int startingWhiteSpaces){
         while (!isOOB(fileContent, pos)) {
-            if (isStartOfOrderedListItem(fileContent, pos)) {
-                sublistTag = "ol";
-                posPrevious = pos;
-            }
-            if (isStartOfUnorderedListItem(fileContent, pos)) {
-                sublistTag = "ul";
-                pos++;
-                posPrevious = pos;
-            }
             if(isBasicParagraphSeparator(fileContent, pos)){
-                handleListBreakPoint(fileContent, sublistTag, tag);
-                while (!isOOB(fileContent, pos) && isBlankLine(fileContent, pos)){
-                    skipLine(fileContent);
-                }
-                int numWhiteSpaces = 0;
-                int peek = pos;
-                while (!isOOB(fileContent, peek) && isWhiteSpace(fileContent.charAt(peek))){
-                    peek++;
-                    numWhiteSpaces++;
-                }
-                if(numWhiteSpaces >= indentOfTag) {
-                    parseParagraphs(fileContent, tag, startingWhiteSpaces + 2);
-                }
-                if(!(isStartOfOrderedListItem(fileContent, pos) || isStartOfUnorderedListItem(fileContent, pos))) {
+                BlankHTMLTag content = new BlankHTMLTag();
+                content.content = fileContent.substring(posPrevious, pos);
+                listItem.children.add(content);
+                list.children.add(listItem);
+                posPrevious = pos;
+                skipLinesWhileBlank(fileContent);
+                int numWhiteSpaces = countWhiteSpaces(fileContent, pos);
+                if(numWhiteSpaces < startingWhiteSpaces) {
                     break;
-                }
-            }
-            if(!isOOB(fileContent, pos + startingWhiteSpaces + 4) && isCarriageReturn(fileContent.charAt(pos))){
-                pos++;
-                while (isWhiteSpace(fileContent.charAt(pos))) {
-                    pos++;
-                }
-                if(isStartOfUnorderedListItem(fileContent, pos) || isStartOfOrderedListItem(fileContent, pos)){
-                    handleListBreakPoint(fileContent, sublistTag, tag);
-                    continue;
+                } else {
+                    parseParagraphs(fileContent, listItem, startingWhiteSpaces + 2);
                 }
             }
             pos++;
         }
-        pos++;
+    }
+
+    private void handleList(String fileContent, int startingWhiteSpaces, HTMLTag parentTag, int indentOfTag) {
+        posPrevious = pos;
+        HTMLTag tag = new HTMLTag("li");
+        HTMLTag listItem = getListTagBasedOnStart(fileContent);
+        walkList(fileContent, listItem, tag, startingWhiteSpaces);
         parentTag.children.add(tag);
         toNextParagraph(fileContent);
+    }
+
+    private void skipLinesWhileBlank(String fileContent) {
+        while (!isOOB(fileContent, pos) && isBlankLine(fileContent, pos)){
+            skipLine(fileContent);
+        }
+    }
+
+    private int countWhiteSpaces(String fileContent, int peek) {
+        int numWhiteSpaces = 0;
+        while (!isOOB(fileContent, peek) && isWhiteSpace(fileContent.charAt(peek))) {
+            numWhiteSpaces++;
+            peek++;
+        }
+        return numWhiteSpaces;
     }
 
     private void handleListBreakPoint(String fileContent, String sublistTag, HTMLTag tag) {

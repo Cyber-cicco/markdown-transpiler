@@ -13,6 +13,7 @@ public class BooleanTester {
         assertTrue(isBlankLine("\r ", 0));
         assertTrue(isBlankLine("\t\r ", 0));
         assertTrue(isBlankLine("", 0));
+assertTrue(isBlankLine("\ntest", 0));
 
         assertFalse(isBlankLine("      \ttest", 0));
     }
@@ -51,9 +52,9 @@ public class BooleanTester {
 
     @Test
     public void testIsPipeAtLineStart() {
-        assertTrue(isPipeAtStartLine("|", 0));
-        assertTrue(isPipeAtStartLine("\n|", 1));
-        assertFalse(isPipeAtStartLine("\n    |", 1));
+        assertTrue(isPipeAtStartLine("|", 0, 0));
+        assertTrue(isPipeAtStartLine("\n|", 1, 0));
+        assertFalse(isPipeAtStartLine("\n    |", 1, 0));
     }
 
     @Test
@@ -129,8 +130,9 @@ public class BooleanTester {
 
     @Test
     public void testPreviousIsBlank() {
-        assertTrue(previousIsBlankAndUnderAmount("   |", 2));
-        assertTrue(previousIsBlankAndUnderAmount("\n   |", 3));
-        assertFalse(previousIsBlankAndUnderAmount("\n    |", 4));
+        assertTrue(previousIsBlankAndUnderAmount("   |", 2, 0));
+        assertTrue(previousIsBlankAndUnderAmount("\n   |", 3, 0));
+        assertTrue(previousIsBlankAndUnderAmount("\n    |", 4, 2));
+        assertFalse(previousIsBlankAndUnderAmount("\n    |", 4, 0));
     }
 }
