@@ -247,9 +247,16 @@ public class ParagraphParser {
                 while (!isOOB(fileContent, pos) && isBlankLine(fileContent, pos)){
                     skipLine(fileContent);
                 }
-                if(isStartOfUnorderedListItem(fileContent, pos) || isStartOfOrderedListItem(fileContent, pos)){
-                    continue;
-                } else {
+                int numWhiteSpaces = 0;
+                int peek = pos;
+                while (!isOOB(fileContent, peek) && isWhiteSpace(fileContent.charAt(peek))){
+                    peek++;
+                    numWhiteSpaces++;
+                }
+                if(numWhiteSpaces >= indentOfTag) {
+                    parseParagraphs(fileContent, tag, startingWhiteSpaces + 2);
+                }
+                if(!(isStartOfOrderedListItem(fileContent, pos) || isStartOfUnorderedListItem(fileContent, pos))) {
                     break;
                 }
             }
