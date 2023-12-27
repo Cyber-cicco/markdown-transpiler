@@ -1,5 +1,7 @@
 package org.example;
 
+import javax.swing.*;
+
 import static org.example.ExpressionEvalutor.*;
 
 public class ParagraphParser {
@@ -244,12 +246,28 @@ public class ParagraphParser {
                 posPrevious = pos;
                 skipLinesWhileBlank(fileContent);
                 int numWhiteSpaces = countWhiteSpaces(fileContent, pos);
-                if(numWhiteSpaces < startingWhiteSpaces) {
-                    break;
-                } else {
+                printLine(fileContent, pos);
+                System.out.println(numWhiteSpaces);
+                System.out.println(startingWhiteSpaces);
+                if (numWhiteSpaces >= startingWhiteSpaces + 2) {
+                    printLine(fileContent, pos);
                     parseParagraphs(fileContent, listItem, startingWhiteSpaces + 2);
                 }
+                break;
             }
+            pos++;
+        }
+    }
+
+    private void printLine(String fileContent, int peek) {
+        while (!isOOB(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))) {
+            peek ++;
+        }
+        System.out.println(fileContent.substring(pos, peek));
+    }
+
+    private void skipWhiteSpaces(String fileContent) {
+        while (!isOOB(fileContent, pos) && isWhiteSpace(fileContent.charAt(pos))){
             pos++;
         }
     }
@@ -346,7 +364,7 @@ public class ParagraphParser {
                 continue;
             }
             if(isStartOfUnorderedListItem(fileContent, pos) || isStartOfOrderedListItem(fileContent, pos)) {
-                handleList(fileContent, pos, parentTag, indentOfTag);
+                handleList(fileContent, startWhiteSpaces, parentTag, indentOfTag);
                 continue;
             }
             handleBaseParagraphOrTableau(fileContent, parentTag, indentOfTag);
