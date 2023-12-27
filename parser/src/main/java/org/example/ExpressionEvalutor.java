@@ -2,7 +2,8 @@ package org.example;
 
 class ExpressionEvalutor {
 
-    private static final int NUM_SW = 4;
+    public static final int NUM_SW = 4;
+    public static final int NUM_TAB = 2;
 
     /**
      * PURE
@@ -105,7 +106,7 @@ class ExpressionEvalutor {
     }
 
     static boolean hasEnoughTabForCodeBlock(int startTab) {
-        return startTab >= 2;
+        return startTab >= NUM_TAB;
     }
     static boolean hasEnoughWhiteSpaceForCodeBlock(int startWhiteSpaces) {
         return startWhiteSpaces >= NUM_SW;

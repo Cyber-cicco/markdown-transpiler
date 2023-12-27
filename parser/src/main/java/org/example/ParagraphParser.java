@@ -68,6 +68,26 @@ public class ParagraphParser {
         pos++;
     }
 
+    private boolean isIndentedForCodeBlock(int numWhiteSpaces, int intendedWhiteSpaces){
+        return numWhiteSpaces >= intendedWhiteSpaces;
+    }
+
+    private void walkIndentedCodeBlock(String fileContent, int intendedWhiteSpaces){
+        int numWhiteSpaces = 0;
+        int peek = pos;
+        while (!isOOB(fileContent, peek) && isWhiteSpace(fileContent.charAt(peek))) {
+            peek++;
+            numWhiteSpaces++;
+        }
+        if(isIndentedForCodeBlock(numWhiteSpaces, intendedWhiteSpaces)) {
+            pos = peek;
+            while (!isOOB(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))) {
+                pos++;
+            }
+            pos++;
+            walkIndentedCodeBlock(fileContent, intendedWhiteSpaces);
+        }
+    }
     /**
      * MUT pos
      * MUT posPrevious
@@ -75,9 +95,9 @@ public class ParagraphParser {
      * MUT startTab
      * MUT startWhiteSpaces
      */
-    private void handleIndentCodeBlock(String fileContent){
+    private void handleIndentCodeBlock(String fileContent, int intendedWhiteSpaces, int intendedTabs){
         posPrevious = pos;
-        while (!isOOB(fileContent, pos) && !isBasicParagraphSeparator(fileContent, pos)){
+        while (!isOOB(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))){
             pos++;
         }
         pos++;
@@ -189,7 +209,7 @@ public class ParagraphParser {
         while (!isOOB(fileContent, pos) && !isBasicParagraphSeparator(fileContent, pos)) {
             pos++;
         }
-        HTMLTag tag = new HTMLTag("div");
+        HTMLTag tag = new HTMLTag("p");
         BlankHTMLTag child = new BlankHTMLTag();
         child.content = fileContent.substring(posPrevious, pos);
         tag.children.add(child);
@@ -223,18 +243,26 @@ public class ParagraphParser {
                 pos++;
                 posPrevious = pos;
             }
-            if(!isOOB(fileContent, pos + startingWhiteSpaces + 1) && isCarriageReturn(fileContent.charAt(pos))){
-                while (isWhiteSpace(fileContent.charAt(pos)) || isCarriageReturn(fileContent.charAt(pos))) {
+            if(isBasicParagraphSeparator(fileContent, pos)){
+                handleListBreakPoint(fileContent, sublistTag, tag);
+                while (!isOOB(fileContent, pos) && isBlankLine(fileContent, pos)){
+                    skipLine(fileContent);
+                }
+                if(isStartOfUnorderedListItem(fileContent, pos) || isStartOfOrderedListItem(fileContent, pos)){
+                    continue;
+                } else {
+                    break;
+                }
+            }
+            if(!isOOB(fileContent, pos + startingWhiteSpaces + 4) && isCarriageReturn(fileContent.charAt(pos))){
+                pos++;
+                while (isWhiteSpace(fileContent.charAt(pos))) {
                     pos++;
                 }
-                System.out.println(fileContent.charAt(pos));
                 if(isStartOfUnorderedListItem(fileContent, pos) || isStartOfOrderedListItem(fileContent, pos)){
                     handleListBreakPoint(fileContent, sublistTag, tag);
                     continue;
                 }
-            }
-            if(isBasicParagraphSeparator(fileContent, pos)){
-                handleListBreakPoint(fileContent, sublistTag, tag);
             }
             pos++;
         }
@@ -249,11 +277,10 @@ public class ParagraphParser {
         content.content = fileContent.substring(posPrevious, pos);
         unorderedItem.children.add(content);
         tag.children.add(unorderedItem);
-        pos++;
         while (!isOOB(fileContent, pos) && isBlankLine(fileContent, pos)){
             skipLine(fileContent);
         }
-        pos++;
+        posPrevious = pos;
     }
     /**
      * PURE
@@ -286,13 +313,12 @@ public class ParagraphParser {
                 handleBlankLine(fileContent);
             }
             if (hasEnoughWhiteSpaceForCodeBlock(startWhiteSpaces)) {
-                pos += startWhiteSpaces;
-                handleIndentCodeBlock(fileContent);
+                handleIndentCodeBlock(fileContent, NUM_SW, NUM_TAB);
                 continue;
             }
             if (hasEnoughTabForCodeBlock(startTab)){
                 pos += startTab;
-                handleIndentCodeBlock(fileContent);
+                handleIndentCodeBlock(fileContent, NUM_SW, NUM_TAB);
                 continue;
             }
             int headNumber = countHeadingNumber(fileContent, pos);
