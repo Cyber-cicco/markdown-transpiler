@@ -108,11 +108,11 @@ class ExpressionEvalutor {
     static boolean hasEnoughTabForCodeBlock(int startTab) {
         return startTab >= NUM_TAB;
     }
-    static boolean hasEnoughWhiteSpaceForCodeBlock(int startWhiteSpaces) {
-        return startWhiteSpaces >= NUM_SW;
+    static boolean hasEnoughWhiteSpaceForCodeBlock(int startWhiteSpaces, int indentOfTag) {
+        return startWhiteSpaces >= indentOfTag + NUM_SW;
     }
 
-    static boolean isTabSeparator(String fileContent, int prevPipeCount, int peek) {
+    static boolean isTabSeparator(String fileContent, int prevPipeCount, int peek, int indentOfTag) {
         int pipeCount = 0;
         int wsCount = 0;
         int tCount = 0;
@@ -133,7 +133,7 @@ class ExpressionEvalutor {
             if(isBlankLine(fileContent, peek)){
                 break;
             }
-            if(hasEnoughWhiteSpaceForCodeBlock(wsCount)) {
+            if(hasEnoughWhiteSpaceForCodeBlock(wsCount, indentOfTag)) {
                 return false;
             }
             if(hasEnoughTabForCodeBlock(tCount)) {
@@ -287,22 +287,30 @@ class ExpressionEvalutor {
 
 
 
-    static boolean isTabBreaker(String fileContent, int peek) {
+    static boolean isTabBreaker(String fileContent, int peek, int indentOfTag) {
         if(isOOB(fileContent, peek +1)) return true;
         if (!isCarriageReturn(fileContent.charAt(peek))) return false;
         int nbHeading = countHeadingNumber(fileContent, peek + 1);
-        return isBasicParagraphSeparator(fileContent, peek) ||
+        int numWhiteSpaces = 0;
+        int lastPeek = peek;
+        peek++;
+        while (!isOOB(fileContent, peek) && isWhiteSpaceOrTab(fileContent, peek)) {
+            peek++;
+            numWhiteSpaces++;
+        }
+        return isBasicParagraphSeparator(fileContent, lastPeek) ||
                 isHeading(nbHeading) ||
-                isBlockQuote(fileContent.charAt(peek + 1)) ||
-                isStartOfUnorderedListItem(fileContent, peek + 1) ||
-                isStartOfOrderedListItem(fileContent, peek + 1);
+                isBlockQuote(fileContent.charAt(peek)) ||
+                isStartOfUnorderedListItem(fileContent, peek) ||
+                hasEnoughWhiteSpaceForCodeBlock(numWhiteSpaces, indentOfTag) ||
+                isStartOfOrderedListItem(fileContent, peek);
     }
-    static boolean isTableau(String fileContent, int peek) {
+    static boolean isTableau(String fileContent, int peek, int indentOfTag) {
         int pipeCount = 0;
         int lineCount = 0;
         while (!isOOB(fileContent, peek) && lineCount < 2){
             if(lineCount == 1){
-                if(isTabSeparator(fileContent, pipeCount, peek)){
+                if(isTabSeparator(fileContent, pipeCount, peek, indentOfTag)){
                     while (!isOOB(fileContent, peek) && !isCarriageReturn(fileContent.charAt(peek))) {
                         peek++;
                     }

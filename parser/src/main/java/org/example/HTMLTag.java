@@ -38,8 +38,10 @@ public class HTMLTag {
 
     public String toString() {
         return getOpeningTag()
+                + "\n"
                 + children.stream().map(HTMLTag::toString).collect(Collectors.joining(" "))
-                + getClosingTag();
+                + getClosingTag()
+                + "\n";
     }
 
 

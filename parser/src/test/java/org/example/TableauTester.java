@@ -73,31 +73,32 @@ Header 1 | Header 2 | Header 3 |
             """;
     @Test
     public void testIsTabBreaker(){
-        assertTrue(isTabBreaker("\n# test", 0));
-        assertTrue(isTabBreaker("\n\ntest", 0));
-        assertTrue(isTabBreaker("\n     \ntest", 0));
-        assertTrue(isTabBreaker("\n", 0));
-        assertTrue(isTabBreaker("\n- ", 0));
-        assertTrue(isTabBreaker("\n   - ", 0));
-        assertTrue(isTabBreaker("\n     test", 0));
-        assertTrue(isTabBreaker("\n     2) ", 0));
-        assertFalse(isTabBreaker("\n   test", 0));
-        assertFalse(isTabBreaker("\n################# test", 0));
-        assertFalse(isTabBreaker("\ntest", 0));
+        assertTrue(isTabBreaker("\n# test", 0, 0));
+        assertTrue(isTabBreaker("\n\ntest", 0, 0));
+        assertTrue(isTabBreaker("\n     \ntest", 0, 0));
+        assertTrue(isTabBreaker("\n", 0, 0));
+        assertTrue(isTabBreaker("\n- ", 0, 0));
+        assertTrue(isTabBreaker("\n - ", 0, 0));
+        assertTrue(isTabBreaker("\n   - ", 0, 0));
+        assertTrue(isTabBreaker("\n     test", 0, 0));
+        assertTrue(isTabBreaker("\n     2) ", 0, 0));
+        assertFalse(isTabBreaker("\n   test", 0, 0));
+        assertFalse(isTabBreaker("\n################# test", 0, 0));
+        assertFalse(isTabBreaker("\ntest", 0, 0));
     }
 
     @Test
     public void testIsTableau(){
-        assertTrue(isTableau(TAB_1, 0));
-        assertTrue(isTableau(TAB_2, 0));
-        assertTrue(isTableau(TAB_3, 0));
-        assertTrue(isTableau(TAB_7, 0));
-        assertTrue(isTableau(TAB_10, 0));
-        assertFalse(isTableau(TAB_4, 0));
-        assertFalse(isTableau(TAB_5, 0));
-        assertFalse(isTableau(TAB_6, 0));
-        assertFalse(isTableau(TAB_8, 0));
-        assertFalse(isTableau(TAB_9, 0));
+        assertTrue(isTableau(TAB_1, 0, 0));
+        assertTrue(isTableau(TAB_2, 0, 0));
+        assertTrue(isTableau(TAB_3, 0, 0));
+        assertTrue(isTableau(TAB_7, 0, 0));
+        assertTrue(isTableau(TAB_10, 0, 0));
+        assertFalse(isTableau(TAB_4, 0, 0));
+        assertFalse(isTableau(TAB_5, 0, 0));
+        assertFalse(isTableau(TAB_6, 0, 0));
+        assertFalse(isTableau(TAB_8, 0, 0));
+        assertFalse(isTableau(TAB_9, 0, 0));
     }
 
     @Test
@@ -114,16 +115,16 @@ Header 1 | Header 2 | Header 3 |
 
     @Test
     public void testIsTabSeparator() {
-        assertTrue(isTabSeparator("\n|:-:|----------|-:|\n", 2, 1));
-        assertTrue(isTabSeparator("\n:-:|----------|-:|\n", 2, 1));
-        assertTrue(isTabSeparator("\n :-:|----------|-:|\n", 2, 1));
-        assertTrue(isTabSeparator("\n   |:-:|----------|-:|\n", 2, 1));
-        assertTrue(isTabSeparator("\n   :-:|----------|-:|\n", 2, 1));
-        assertTrue(isTabSeparator("\n   :-:|----------|-:\n", 2, 1));
-        assertTrue(isTabSeparator("\n :-:|-|-:\t\n", 2, 1));
-        assertFalse(isTabSeparator("\n   :-:|----------|:\n", 2, 1));
-        assertFalse(isTabSeparator("\n   :-:|---|-------|:\n", 2, 1));
-        assertFalse(isTabSeparator("\n |   \n", 1, 1));
-        assertFalse(isTabSeparator("\n    :-:|----------|-:\n", 2, 1));
+        assertTrue(isTabSeparator("\n|:-:|----------|-:|\n", 2, 1, 0));
+        assertTrue(isTabSeparator("\n:-:|----------|-:|\n", 2, 1, 0));
+        assertTrue(isTabSeparator("\n :-:|----------|-:|\n", 2, 1, 0));
+        assertTrue(isTabSeparator("\n   |:-:|----------|-:|\n", 2, 1, 0));
+        assertTrue(isTabSeparator("\n   :-:|----------|-:|\n", 2, 1, 0));
+        assertTrue(isTabSeparator("\n   :-:|----------|-:\n", 2, 1, 0));
+        assertTrue(isTabSeparator("\n :-:|-|-:\t\n", 2, 1, 0));
+        assertFalse(isTabSeparator("\n   :-:|----------|:\n", 2, 1, 0));
+        assertFalse(isTabSeparator("\n   :-:|---|-------|:\n", 2, 1, 0));
+        assertFalse(isTabSeparator("\n |   \n", 1, 1, 0));
+        assertFalse(isTabSeparator("\n    :-:|----------|-:\n", 2, 1, 0));
     }
 }

@@ -125,7 +125,7 @@ oui
 """;
     public static void main(String[] args) {
         ParagraphParser parser = new ParagraphParser();
-        parser.parseParagraphs(TEST_LIST);
+        parser.init(TEST_MARKDOWN);
     }
 
 }

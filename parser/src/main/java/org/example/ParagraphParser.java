@@ -1,6 +1,5 @@
 package org.example;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.example.ExpressionEvalutor.*;
@@ -12,7 +11,7 @@ public class ParagraphParser {
     private int posPrevious = 0;
     private int startWhiteSpaces = 0;
     private int startTab = 0;
-    List<HTMLTag> bodyStructure = new ArrayList<>();
+    HTMLTag rootTag = new HTMLTag("main");
 
 
     /**
@@ -95,7 +94,7 @@ public class ParagraphParser {
      * MUT startTab
      * MUT startWhiteSpaces
      */
-    private void handleIndentCodeBlock(String fileContent, int intendedWhiteSpaces, int intendedTabs){
+    private void handleIndentCodeBlock(String fileContent, HTMLTag parentTag, int intendedWhiteSpaces, int intendedTabs){
         posPrevious = pos;
         while (!isOOB(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))){
             pos++;
@@ -105,7 +104,7 @@ public class ParagraphParser {
         BlankHTMLTag child = new BlankHTMLTag();
         child.content = fileContent.substring(posPrevious, pos);
         tag.children.add(child);
-        bodyStructure.add(tag);
+        parentTag.children.add(tag);
         toNextParagraph(fileContent);
     }
 
@@ -116,7 +115,7 @@ public class ParagraphParser {
      * MUT startTab
      * MUT startWhiteSpaces
      */
-    private void handleHeading(String fileContent, int headNumber){
+    private void handleHeading(String fileContent, int headNumber, HTMLTag parentTag){
         pos += headNumber;
         posPrevious = pos;
         while (!isOOB(fileContent, pos) && !isCarriageReturn(fileContent.charAt(pos))){
@@ -127,7 +126,7 @@ public class ParagraphParser {
         BlankHTMLTag child = new BlankHTMLTag();
         child.content = fileContent.substring(posPrevious, pos);
         tag.children.add(child);
-        bodyStructure.add(tag);
+        parentTag.children.add(tag);
         toNextParagraph(fileContent);
     }
 
@@ -138,7 +137,7 @@ public class ParagraphParser {
      * MUT startTab
      * MUT startWhiteSpaces
      */
-    private void handleBlockQuote(String fileContent) {
+    private void handleBlockQuote(String fileContent, HTMLTag parentTag) {
         pos++;
         posPrevious = pos;
         while (!isOOB(fileContent, pos) && !isBasicParagraphSeparator(fileContent, pos)){
@@ -148,7 +147,7 @@ public class ParagraphParser {
         BlankHTMLTag child = new BlankHTMLTag();
         child.content = fileContent.substring(posPrevious, pos);
         tag.children.add(child);
-        bodyStructure.add(tag);
+        parentTag.children.add(tag);
         toNextParagraph(fileContent);
     }
 
@@ -160,7 +159,7 @@ public class ParagraphParser {
      * MUT startTab
      * MUT startWhiteSpaces
      */
-    private void handleCodeBlock(String fileContent, int tildaNumber) {
+    private void handleCodeBlock(String fileContent, int tildaNumber, HTMLTag parentTag) {
         HTMLTag tag = new HTMLTag("code");
         pos += tildaNumber;
         posPrevious = pos;
@@ -180,7 +179,7 @@ public class ParagraphParser {
         BlankHTMLTag child = new BlankHTMLTag();
         child.content = fileContent.substring(posPrevious, pos);
         tag.children.add(child);
-        bodyStructure.add(tag);
+        parentTag.children.add(tag);
         pos++;
         skipLine(fileContent);
         toNextParagraph(fileContent);
@@ -195,17 +194,17 @@ public class ParagraphParser {
      * MUT paragraphs
      * MUT pos
      */
-    private void handleBaseParagraphOrTableau(String fileContent) {
+    private void handleBaseParagraphOrTableau(String fileContent, HTMLTag parentTag, int indentOfTag) {
         posPrevious = pos;
-        boolean isTableau = isTableau(fileContent, pos);
+        boolean isTableau = isTableau(fileContent, pos, indentOfTag);
         if(isTableau){
-            handleTableau(fileContent);
+            handleTableau(fileContent, parentTag, indentOfTag);
             return;
         }
-        handleBaseParagraph(fileContent);
+        handleBaseParagraph(fileContent, parentTag);
     }
 
-    private void handleBaseParagraph(String fileContent) {
+    private void handleBaseParagraph(String fileContent, HTMLTag parentTag) {
         while (!isOOB(fileContent, pos) && !isBasicParagraphSeparator(fileContent, pos)) {
             pos++;
         }
@@ -213,12 +212,12 @@ public class ParagraphParser {
         BlankHTMLTag child = new BlankHTMLTag();
         child.content = fileContent.substring(posPrevious, pos);
         tag.children.add(child);
-        bodyStructure.add(tag);
+        parentTag.children.add(tag);
         toNextParagraph(fileContent);
     }
 
-    private void handleTableau(String fileContent) {
-        while (!isOOB(fileContent, pos) && !isTabBreaker(fileContent, pos)) {
+    private void handleTableau(String fileContent, HTMLTag parentTag, int indentOfTag) {
+        while (!isOOB(fileContent, pos) && !isTabBreaker(fileContent, pos, indentOfTag)) {
             pos++;
         }
         pos++;
@@ -226,11 +225,11 @@ public class ParagraphParser {
         BlankHTMLTag child = new BlankHTMLTag();
         child.content = fileContent.substring(posPrevious, pos);
         tag.children.add(child);
-        bodyStructure.add(tag);
+        parentTag.children.add(tag);
         toNextParagraph(fileContent);
     }
 
-    private void handleList(String fileContent, int startingWhiteSpaces) {
+    private void handleList(String fileContent, int startingWhiteSpaces, HTMLTag parentTag, int indentOfTag) {
         HTMLTag tag = new HTMLTag("li");
         String sublistTag = "";
         while (!isOOB(fileContent, pos)) {
@@ -267,7 +266,7 @@ public class ParagraphParser {
             pos++;
         }
         pos++;
-        bodyStructure.add(tag);
+        parentTag.children.add(tag);
         toNextParagraph(fileContent);
     }
 
@@ -306,46 +305,50 @@ public class ParagraphParser {
         pos++;
     }
 
-    public List<HTMLTag> parseParagraphs(String fileContent) {
+    public HTMLTag parseParagraphs(String fileContent, HTMLTag parentTag, int indentOfTag) {
         while(!isOOB(fileContent, pos)) {
             handleStartWhitespaces(fileContent);
+            if(startWhiteSpaces < indentOfTag) {
+                break;
+            }
             if (isBlankLine(fileContent, pos)){
                 handleBlankLine(fileContent);
             }
-            if (hasEnoughWhiteSpaceForCodeBlock(startWhiteSpaces)) {
-                handleIndentCodeBlock(fileContent, NUM_SW, NUM_TAB);
+            if (hasEnoughWhiteSpaceForCodeBlock(startWhiteSpaces, indentOfTag)) {
+                handleIndentCodeBlock(fileContent, parentTag, NUM_SW, NUM_TAB);
                 continue;
             }
             if (hasEnoughTabForCodeBlock(startTab)){
                 pos += startTab;
-                handleIndentCodeBlock(fileContent, NUM_SW, NUM_TAB);
+                handleIndentCodeBlock(fileContent, parentTag, NUM_SW, NUM_TAB);
                 continue;
             }
             int headNumber = countHeadingNumber(fileContent, pos);
             if(isHeading(headNumber)) {
-                handleHeading(fileContent, headNumber);
+                handleHeading(fileContent, headNumber, parentTag);
                 continue;
             }
             if(isBlockQuote(fileContent.charAt(pos))) {
-                handleBlockQuote(fileContent);
+                handleBlockQuote(fileContent, parentTag);
                 continue;
             }
             int tildaNumber = countTildas(fileContent, pos);
             if (isCodeBlock(tildaNumber)) {
-                handleCodeBlock(fileContent, tildaNumber);
+                handleCodeBlock(fileContent, tildaNumber, parentTag);
                 continue;
             }
             if(isStartOfUnorderedListItem(fileContent, pos) || isStartOfOrderedListItem(fileContent, pos)) {
-                handleList(fileContent, pos);
+                handleList(fileContent, pos, parentTag, indentOfTag);
                 continue;
             }
-            handleBaseParagraphOrTableau(fileContent);
+            handleBaseParagraphOrTableau(fileContent, parentTag, indentOfTag);
         }
-        bodyStructure.forEach(p -> {
-            System.out.println(p);
-            System.out.println();
-        });
-        return bodyStructure;
+        return parentTag;
+    }
+
+    public void init(String fileContent){
+        parseParagraphs(fileContent, rootTag, 0);
+        System.out.println(rootTag);
     }
 
 }
