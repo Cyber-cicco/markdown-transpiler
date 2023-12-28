@@ -236,8 +236,9 @@ public class ParagraphParser {
         return new HTMLTag("ul");
     }
 
-    private void walkList(String fileContent, HTMLTag listItem, HTMLTag list, int startingWhiteSpaces){
+    private void walkList(String fileContent, HTMLTag listItem, HTMLTag list, int startingWhiteSpaces, int indentOfTag){
         while (!isOOB(fileContent, pos)) {
+            // cas où l'on trouve une ligne de séparation entre un élément de la liste et la suite du texte.
             if(isBasicParagraphSeparator(fileContent, pos)){
                 BlankHTMLTag content = new BlankHTMLTag();
                 content.content = fileContent.substring(posPrevious, pos);
@@ -246,12 +247,20 @@ public class ParagraphParser {
                 posPrevious = pos;
                 skipLinesWhileBlank(fileContent);
                 int numWhiteSpaces = countWhiteSpaces(fileContent, pos);
-                printLine(fileContent, pos);
-                System.out.println(numWhiteSpaces);
-                System.out.println(startingWhiteSpaces);
                 if (numWhiteSpaces >= startingWhiteSpaces + 2) {
-                    printLine(fileContent, pos);
                     parseParagraphs(fileContent, listItem, startingWhiteSpaces + 2);
+                    printLine(fileContent, pos);
+                    if(isStartOfUnorderedListItem(fileContent, pos) || isStartOfOrderedListItem(fileContent, pos)) {
+                        HTMLTag newListItem = getListTagBasedOnStart(fileContent);
+                        walkList(fileContent, newListItem, list, startingWhiteSpaces, indentOfTag);
+                        break;
+                    }
+                }
+                int peek = pos + numWhiteSpaces;
+                if((isStartOfUnorderedListItem(fileContent, peek) || isStartOfOrderedListItem(fileContent, peek)) && numWhiteSpaces == indentOfTag) {
+                    pos = peek;
+                    HTMLTag newListItem = getListTagBasedOnStart(fileContent);
+                    walkList(fileContent, newListItem, list, startingWhiteSpaces, indentOfTag);
                 }
                 break;
             }
@@ -276,7 +285,7 @@ public class ParagraphParser {
         posPrevious = pos;
         HTMLTag tag = new HTMLTag("li");
         HTMLTag listItem = getListTagBasedOnStart(fileContent);
-        walkList(fileContent, listItem, tag, startingWhiteSpaces);
+        walkList(fileContent, listItem, tag, startingWhiteSpaces, indentOfTag);
         parentTag.children.add(tag);
         toNextParagraph(fileContent);
     }
@@ -296,17 +305,6 @@ public class ParagraphParser {
         return numWhiteSpaces;
     }
 
-    private void handleListBreakPoint(String fileContent, String sublistTag, HTMLTag tag) {
-        HTMLTag unorderedItem = new HTMLTag(sublistTag);
-        BlankHTMLTag content = new BlankHTMLTag();
-        content.content = fileContent.substring(posPrevious, pos);
-        unorderedItem.children.add(content);
-        tag.children.add(unorderedItem);
-        while (!isOOB(fileContent, pos) && isBlankLine(fileContent, pos)){
-            skipLine(fileContent);
-        }
-        posPrevious = pos;
-    }
     /**
      * PURE
      */
