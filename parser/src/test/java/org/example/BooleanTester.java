@@ -13,8 +13,7 @@ public class BooleanTester {
         assertTrue(isBlankLine("\r ", 0));
         assertTrue(isBlankLine("\t\r ", 0));
         assertTrue(isBlankLine("", 0));
-assertTrue(isBlankLine("\ntest", 0));
-
+        assertTrue(isBlankLine("\ntest", 0));
         assertFalse(isBlankLine("      \ttest", 0));
     }
 

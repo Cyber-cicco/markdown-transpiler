@@ -37,7 +37,7 @@ class ExpressionEvalutor {
      * Peut être des soucis de performance ?
      */
     static boolean isBasicParagraphSeparator(String fileContent, int peek){
-        if (isOOB(fileContent, peek + 1)) return true;
+        if (isOOB(fileContent, peek)) return true;
         return isCarriageReturn(fileContent.charAt(peek)) && isBlankLine(fileContent, peek + 1);
     }
     /**

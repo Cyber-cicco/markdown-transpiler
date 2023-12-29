@@ -5,6 +5,11 @@ public class BlankHTMLTag extends HTMLTag {
         super("");
     }
 
+    public BlankHTMLTag(String fileContent, int posPrevious, int pos){
+        super("");
+        content = fileContent.substring(posPrevious, pos);
+    }
+
     public String content;
 
     @Override

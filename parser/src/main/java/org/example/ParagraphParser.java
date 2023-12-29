@@ -240,6 +240,7 @@ public class ParagraphParser {
         while (!isOOB(fileContent, pos)) {
             // cas où l'on trouve une ligne de séparation entre un élément de la liste et la suite du texte.
             if(isBasicParagraphSeparator(fileContent, pos)){
+
                 BlankHTMLTag content = new BlankHTMLTag();
                 content.content = fileContent.substring(posPrevious, pos);
                 listItem.children.add(content);
@@ -247,22 +248,54 @@ public class ParagraphParser {
                 posPrevious = pos;
                 skipLinesWhileBlank(fileContent);
                 int numWhiteSpaces = countWhiteSpaces(fileContent, pos);
+
                 if (numWhiteSpaces >= startingWhiteSpaces + 2) {
                     parseParagraphs(fileContent, listItem, startingWhiteSpaces + 2);
-                    printLine(fileContent, pos);
+
                     if(isStartOfUnorderedListItem(fileContent, pos) || isStartOfOrderedListItem(fileContent, pos)) {
                         HTMLTag newListItem = getListTagBasedOnStart(fileContent);
-                        walkList(fileContent, newListItem, list, startingWhiteSpaces, indentOfTag);
+                        walkList(fileContent, newListItem, list, startingWhiteSpaces, indentOfTag + numWhiteSpaces);
                         break;
                     }
                 }
+
                 int peek = pos + numWhiteSpaces;
+
                 if((isStartOfUnorderedListItem(fileContent, peek) || isStartOfOrderedListItem(fileContent, peek)) && numWhiteSpaces == indentOfTag) {
+
                     pos = peek;
                     HTMLTag newListItem = getListTagBasedOnStart(fileContent);
-                    walkList(fileContent, newListItem, list, startingWhiteSpaces, indentOfTag);
+                    walkList(fileContent, newListItem, list, startingWhiteSpaces, indentOfTag + numWhiteSpaces);
                 }
                 break;
+            }
+
+            if(isCarriageReturn(fileContent.charAt(pos))) {
+                pos++;
+                int numWhiteSpaces = countWhiteSpaces(fileContent, pos);
+
+                if(numWhiteSpaces <= indentOfTag + 4) {
+
+                    pos += numWhiteSpaces;
+                    printLine(fileContent, pos);
+
+                    if(isStartOfUnorderedListItem(fileContent, pos) || isStartOfOrderedListItem(fileContent, pos)) {
+                        BlankHTMLTag content = new BlankHTMLTag();
+                        content.content = fileContent.substring(posPrevious, pos);
+                        listItem.children.add(content);
+                        list.children.add(listItem);
+                        posPrevious = pos;
+                        skipLinesWhileBlank(fileContent);
+
+                        if(numWhiteSpaces < indentOfTag){
+                            break;
+                        }
+
+                        HTMLTag newListItem = getListTagBasedOnStart(fileContent);
+                        walkList(fileContent, newListItem, list, startingWhiteSpaces, indentOfTag + numWhiteSpaces);
+                        break;
+                    }
+                }
             }
             pos++;
         }
