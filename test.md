@@ -134,7 +134,7 @@ caca
 
 (https://www.example.com)
 
-![Image Alt Text](https://placekitten.com/600/723)
+![Image **Alt** Text](https://placekitten.com/600/723)
 
 `Inline Code`
 
